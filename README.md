@@ -1,7 +1,5 @@
 # TCC---Monitoramento-de-energia-com-ESP32
 
-# TCC---Monitoramento-de-energia-com-ESP32
-
 ## 1) Configurar servidor Node.js
 
 Na pasta do projeto, execute:
