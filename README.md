@@ -49,4 +49,5 @@ git add .
 git commit -m "Implementa servidor Node.js e API de energia"
 # caso já tenha remote configurado:
 git push origin main
-```
+
+
