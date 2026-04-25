@@ -31,7 +31,8 @@ const pool = mysql.createPool({
 });
 
 const verificarToken = (req, res, next) => { //cria uma função que recebe req(requisição),res(resposta) e next (passa para o proximo middleware)
-    const token = req.headers['authorization']?.split(' ')[1]; // pega o header authorization
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // pega o header authorization
     if (!token) { //se existir, faça:
         return res.status(401).json({ success: false, error: 'Token não fornecido'}) // se não houver token, retorna 401
     }
