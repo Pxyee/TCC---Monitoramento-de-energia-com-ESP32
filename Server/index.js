@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 
 // Const - Guarda variavel que não pode ser reatribuída
@@ -138,6 +137,9 @@ app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com m
     }
 });
 
+app.get('/', (req, res) => {
+    res.send('API Voltsense funcionando com sucesso!');
+});
 
 // iniciar servidor
 
