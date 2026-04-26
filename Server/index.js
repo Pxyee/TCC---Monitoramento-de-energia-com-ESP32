@@ -137,9 +137,9 @@ app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com m
     }
 });
 
-app.get('/', (req, res) => {
-    res.send('API Voltsense funcionando com sucesso!');
-});
+//app.get('/', (req, res) => {
+  //  res.send('API Voltsense funcionando com sucesso!');
+//});
 
 // iniciar servidor
 
@@ -147,3 +147,8 @@ const PORT = process.env.PORT || 3000;  // pega variavel de ambiente ou usa 3000
 app.listen(PORT, () => { //inicia servidor na porta
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+// Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, 'public')));
