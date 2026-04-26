@@ -15,6 +15,13 @@ const app = express(); // Cria uma instância do Express
 app.use(cors()); //cors = Cross-Origin Resource Sharing, permite que o frontend em outro dominio acesse a API
 app.use(bodyParser.json()); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
 
+
+// Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, '../public'))); // Serve arquivos da pasta public (frontend)
+
+
 /// Configuração chave secreta 
 const SECRET_KEY = process.env.SECRET_KEY; // Chave para assinar os tokens JWT, vem do .env
 
@@ -148,7 +155,3 @@ app.listen(PORT, () => { //inicia servidor na porta
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-// Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
-const path = require('path');
-
-app.use(express.static(path.join(__dirname, 'public')));
