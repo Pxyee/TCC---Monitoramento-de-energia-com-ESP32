@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_DATABASE:", process.env.DB_DATABASE);
+
 // Const - Guarda variavel que não pode ser reatribuída
 // Require - Importa uma biblioteca ou módulo para o código, cada uma pega uma lib do node_modules
 
