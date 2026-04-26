@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voltsense - Dashboard</title>
+
+  <!-- Fonte -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="dashboard.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="toggle-btn" id="toggleBtn" aria-label="Alternar sidebar">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <div class="sidebar-header">
+      <img src="/assets/logo voltsense.png" alt="Logo" class="sidebar-logo">
+      <h2 class="sidebar-title">Voltsense</h2>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li class="nav-item">
+          <button class="nav-link user-btn" title="Usuário">
+            <i class="fas fa-user-circle"></i>
+            <span class="nav-text">Usuário</span>
+          </button>
+        </li>
+        <li class="nav-item calendar-item">
+          <div class="calendar-block">
+            <button class="nav-link calendar-btn" title="Calendário">
+              <i class="fas fa-calendar-alt"></i>
+              <span class="nav-text">Calendário</span>
+            </button>
+            <input type="date" class="calendar-input" aria-label="Escolher data">
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="footer-btn logout-btn" title="Sair">
+        <i class="fas fa-sign-out-alt"></i>
+        <span class="nav-text">Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- LOGO -->
+  <div class="top-area"></div>
+
+  <!-- CARDS -->
+  <main class="main-content">
+
+    <div class="cards">
+
+      <div class="card">
+        <h2>Tensão</h2>
+        <p id="tensao">220 V</p>
+      </div>
+
+      <div class="card">
+        <h2>Corrente</h2>
+        <p id="corrente">12 A</p>
+      </div>
+
+      <div class="card">
+        <h2>Consumo</h2>
+        <p id="consumo">2.4 kWh</p>
+      </div>
+
+      <div class="card">
+        <h2>Última atualização</h2>
+        <p id="atualizacao">18:42</p>
+      </div>
+
+    </div>
+
+    <!-- GRÁFICO -->
+    <div class="chart-box">
+      <h2>Gráfico de Consumo</h2>
+      <canvas id="graficoConsumo"></canvas>
+    </div>
+
+  </main>
+
+  <!-- JS -->
+  <script src="dashboard.js"></script>
+
+</body>
+</html>
