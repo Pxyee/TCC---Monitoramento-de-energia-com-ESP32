@@ -70,12 +70,14 @@ app.post('/api/auth/register', async (req, res) => { //rota post (cria algo novo
             usuarioId: result.insertId
         });
     }catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') { // se email já existir, retorna erro 409
-            res.status(400).json({ success: false, error: 'Email já registrado' });
-        } else {
-            res.status(500).json({ success: false, error: error.message }); // captura ERROS, email duplicado: erro especial, se outro erro: erro 500 (servidor)
-        }
-    }
+    console.error("REGISTER ERROR FULL:", error);
+
+    return res.status(500).json({
+        success: false,
+        error: error.message,
+        full: error
+    });
+}
 });
 
 // Endpoint de login
