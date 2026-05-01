@@ -9,14 +9,13 @@ console.log("DB_DATABASE:", process.env.DB_DATABASE);
 //****** Bibliotecas ******/
 const express = require('express'); 
 const mysql = require('mysql2/promise');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const app = express(); // Cria uma instância do Express
 app.use(cors()); //cors = Cross-Origin Resource Sharing, permite que o frontend em outro dominio acesse a API
-app.use(bodyParser.json()); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
+app.use(express.json()); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
 
 
 // Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
@@ -56,7 +55,16 @@ const verificarToken = (req, res, next) => { //cria uma função que recebe req(
 
 // Endpoint de registro
 
-app.post('/api/auth/register', async (req, res) => { //rota post (cria algo novo)
+app.post('/api/auth/register', async (req, res) => {
+    console.log("HEADERS:", req.headers);
+    console.log("BODY RECEBIDO:", req.body);
+
+    const { nome, email, senha } = req.body;
+
+    console.log("NOME:", nome);
+    console.log("EMAIL:", email);
+    console.log("SENHA:", senha);
+     //rota post (cria algo novo)
     try{
         const { nome, email, senha } = req.body; // extrai nome, email e senha do corpo da requisição
         if (!nome || !email || !senha) {
