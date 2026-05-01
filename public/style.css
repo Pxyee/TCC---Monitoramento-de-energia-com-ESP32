@@ -72,6 +72,31 @@ input {
   font-size: 15px;
 }
 
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 54px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  padding: 0;
+}
+
+.toggle-password:focus {
+  outline: none;
+}
+
 button {
   width: 100%;
   padding: 14px;
@@ -111,4 +136,30 @@ button {
   font-style: normal;
 }
 
+/*Icone olho*/
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: -135px;
+  top: 50%;
+  transform: translateY(-75%);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-password img {
+  width: 20px;
+  height: 20px;
+}
 

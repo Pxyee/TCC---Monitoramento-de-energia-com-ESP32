@@ -92,7 +92,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Email e senha são obrigatórios' });
             }
         const [rows] = await pool.execute( 
-            'SELECT id, senha_hash FROM usuarios WHERE email = ?', // SELECT busca id e senha criptogradada //WHERE onde email seja o enviado
+            'SELECT id, nome, senha_hash FROM usuarios WHERE email = ?', // SELECT busca id e senha criptogradada //WHERE onde email seja o enviado
             [email]
         );
         if (rows.length === 0) {
@@ -105,11 +105,12 @@ app.post('/api/auth/login', async (req, res) => {
         }
         const token = jwt.sign({ id: usuario.id }, SECRET_KEY, { expiresIn: '24h' }); // cria token
         res.json({
-            success: true, // retorna token para o cliente guardar
+            success: true,
             message: 'Login realizado com sucesso',
             token,
-            usuarioId: usuario.id
-        });
+            usuarioId: usuario.id,
+            nome: usuario.nome 
+});
     } catch (error) {
         res.status(500).json({ success: false, error: error.message});
     }

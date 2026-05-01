@@ -1,32 +1,73 @@
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('closed');
-}
+document.querySelectorAll('.toggle-password').forEach(button => {
+  button.addEventListener('click', () => {
+    const inputId = button.getAttribute('data-target');
+    const input = document.getElementById(inputId);
+    
+    // pega o ícone dentro do botão clicado (não global)
+    const icon = button.querySelector('img');
 
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = 'login.html';
-}
-
-const ctx = document.getElementById('graficoConsumo');
-
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
-    datasets: [{
-      label: 'Consumo (kWh)',
-      data: [1.2, 1.8, 2.1, 1.9, 2.4, 2.0],
-      tension: 0.4,
-      fill: false
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: true
-      }
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.src = 'assets/ocultar preto.png';
+    } else {
+      input.type = 'password';
+      icon.src = 'assets/mostrar preto.png';
     }
-  }
+  });
+});
+
+
+document.getElementById("cadastroForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const senha = document.getElementById("senha").value;
+    const confirmarSenha = document.getElementById("confirmarSenha").value;
+
+    const mensagem = document.getElementById("mensagem");
+
+    // validação de senha
+    if (senha !== confirmarSenha) {
+        mensagem.innerText = "As senhas não conferem!";
+        mensagem.style.color = "red";
+        return;
+    }
+
+    try {
+        const resposta = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email,
+                senha
+            })
+        });
+
+        const dados = await resposta.json();
+
+if (dados.success) {
+    mensagem.innerText = "Cadastro realizado com sucesso!";
+    mensagem.style.color = "green";
+
+    // salva "sessão" simples
+    localStorage.setItem("usuarioLogado", email);
+
+    setTimeout(() => {
+        window.location.href = "dashboard.html";
+    }, 800);
+} else if (dados.error === "Email já registrado") {
+    mensagem.innerText = "Este email já está registrado. Tente outro.";
+    mensagem.style.color = "red";
+} else {
+    mensagem.innerText = dados.error || "Erro ao realizar cadastro";
+    mensagem.style.color = "red";
+}
+
+    } catch (error) {
+        console.error("Erro no cadastro:", error);
+        mensagem.innerText = "Erro ao conectar com o servidor";
+        mensagem.style.color = "red";
+    }
 });

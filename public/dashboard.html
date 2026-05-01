@@ -2,9 +2,6 @@
 <html lang="pt-BR">
 <head>
   <link rel="icon" href="assets/favicon.ico">
-  
-  
-  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Voltsense - Dashboard</title>
@@ -20,55 +17,49 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Font Awesome Icons -->
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <button class="toggle-btn" id="toggleBtn" aria-label="Alternar sidebar">
+
+    <button class="toggle-btn" id="toggleBtn">
       <i class="fas fa-chevron-left"></i>
     </button>
+
     <div class="sidebar-header">
-      <img src="assets/logo voltsense.png" alt="Logo" class="sidebar-logo">
+      <img src="assets/logo voltsense.png" class="sidebar-logo">
       <h2 class="sidebar-title">Voltsense</h2>
     </div>
 
     <nav class="sidebar-nav">
       <ul class="nav-list">
+
         <li class="nav-item">
-          <button class="nav-link user-btn" title="Usuário">
+          <button class="nav-link user-btn">
             <i class="fas fa-user-circle"></i>
-            <span class="nav-text">Usuário</span>
+            <span class="nav-text" id="nomeUsuario">Usuário</span>
           </button>
-        </li>
-        <li class="nav-item calendar-item">
-          <div class="calendar-block">
-            <button class="nav-link calendar-btn" title="Calendário">
-              <i class="fas fa-calendar-alt"></i>
-              <span class="nav-text">Calendário</span>
-            </button>
-            <input type="date" class="calendar-input" aria-label="Escolher data">
-          </div>
         </li>
       </ul>
     </nav>
 
     <div class="sidebar-footer">
-      <button class="footer-btn logout-btn" title="Sair">
+      <button class="footer-btn logout-btn">
         <i class="fas fa-sign-out-alt"></i>
         <span class="nav-text">Sair</span>
       </button>
     </div>
+
   </aside>
 
-  <!-- LOGO -->
-  <div class="top-area"></div>
-
-  <!-- CARDS -->
+  <!-- MAIN -->
   <main class="main-content">
 
+    <!-- CARDS -->
     <div class="cards">
 
       <div class="card">
@@ -93,15 +84,52 @@
 
     </div>
 
-    <!-- GRÁFICO -->
+    <!-- 🔵 GRÁFICO DO DIA (MENOR) -->
     <div class="chart-box">
-      <h2>Gráfico de Consumo</h2>
+      <h2>Consumo ao longo do dia</h2>
       <canvas id="graficoConsumo"></canvas>
+    </div>
+
+    <!-- 🟣 RESUMO DA SEMANA -->
+    <div class="resumo-semana">
+
+      <div class="resumo-header">
+        <h2>Resumo da Semana</h2>
+
+        <div class="filtro-semana">
+          <label>Semana</label>
+          <input type="week" id="filtroSemana">
+        </div>
+      </div>
+
+      <div class="resumo-cards">
+
+        <div class="resumo-card">
+          <h3>Total</h3>
+          <p id="totalSemana">0 kWh</p>
+        </div>
+
+        <div class="resumo-card">
+          <h3>Média diária</h3>
+          <p id="mediaSemana">0 kWh</p>
+        </div>
+
+        <div class="resumo-card">
+          <h3>Maior consumo</h3>
+          <p id="maxSemana">-</p>
+        </div>
+
+        <div class="resumo-card">
+          <h3>Menor consumo</h3>
+          <p id="minSemana">-</p>
+        </div>
+
+      </div>
+
     </div>
 
   </main>
 
-  <!-- JS -->
   <script src="dashboard.js"></script>
 
 </body>
