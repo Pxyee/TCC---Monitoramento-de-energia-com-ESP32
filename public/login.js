@@ -1,24 +1,3 @@
-const form = document.getElementById('loginForm');
-const mensagem = document.getElementById('mensagem');
-
-// Toggle senha (corrigido)
-document.querySelectorAll('.toggle-password').forEach(button => {
-  button.addEventListener('click', () => {
-    const inputId = button.getAttribute('data-target');
-    const input = document.getElementById(inputId);
-
-    const icon = button.querySelector('img'); // pega o ícone certo
-
-    if (input.type === 'password') {
-      input.type = 'text';
-      icon.src = 'assets/ocultarPreto.png';
-    } else {
-      input.type = 'password';
-      icon.src = 'assets/mostrarPreto.png';
-    }
-  });
-});
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -34,15 +13,19 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify({ email, senha })
     });
 
-    const data = await response.json(); // FALTAVA ISSO
+    if (!response.ok) {
+      throw new Error("Erro na requisição");
+    }
+
+    const data = await response.json();
 
     if (data.success) {
-      // salvar dados corretamente
       localStorage.setItem('token', data.token);
       localStorage.setItem('usuarioId', data.usuarioId);
-      localStorage.setItem('nomeUsuario', data.nome); // ← vem do backend
+      localStorage.setItem('nomeUsuario', data.nome || 'Usuário');
 
       mensagem.innerText = 'Login realizado com sucesso!';
+      mensagem.style.color = "green";
 
       setTimeout(() => {
         window.location.href = 'dashboard.html';
@@ -50,10 +33,12 @@ form.addEventListener('submit', async (e) => {
 
     } else {
       mensagem.innerText = data.error || 'Erro ao realizar login';
+      mensagem.style.color = "red";
     }
 
   } catch (error) {
     console.error(error);
     mensagem.innerText = 'Erro ao conectar com o servidor';
+    mensagem.style.color = "red";
   }
 });

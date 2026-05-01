@@ -58,14 +58,14 @@ const verificarToken = (req, res, next) => { //cria uma função que recebe req(
 
 app.post('/api/auth/register', async (req, res) => { //rota post (cria algo novo)
     try{
-        const { email, senha } = req.body; // extrai email e senha do corpo da requisição
-        if (!email || !senha) {
-            return res.status(400).json({ success: false, error: 'Email e senha são obrigatórios' }); // Se algum dos dois estiver vazio: erro 400
+        const { nome, email, senha } = req.body; // extrai nome, email e senha do corpo da requisição
+        if (!nome || !email || !senha) {
+            return res.status(400).json({ success: false, error: 'Nome, Email e senha são obrigatórios' }); // Se algum dos três estiver vazio: erro 400
         }
          const senhaHash = await bcrypt.hash(senha, 10); //criptografa a senha 
         const [result] = await pool.execute(
-            'INSERT INTO usuarios (email, senha_hash) VALUES (?, ?)', // insere email e senha_hash no banco
-            [email, senhaHash]
+            'INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)', // insere nome, email e senha_hash no banco
+            [nome, email, senhaHash]
         );
         res.json({ // responde com sucesso e o id do novo usuario
             success: true,
