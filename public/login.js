@@ -11,10 +11,10 @@ document.querySelectorAll('.toggle-password').forEach(button => {
 
     if (input.type === 'password') {
       input.type = 'text';
-      icon.src = 'assets/ocultar preto.png';
+      icon.src = 'assets/ocultarPreto.png';
     } else {
       input.type = 'password';
-      icon.src = 'assets/mostrar preto.png';
+      icon.src = 'assets/mostrarPreto.png';
     }
   });
 });
