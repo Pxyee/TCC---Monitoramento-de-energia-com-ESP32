@@ -56,8 +56,9 @@ const verificarToken = (req, res, next) => { //cria uma função que recebe req(
 // Endpoint de registro
 
 app.post('/api/auth/register', async (req, res) => {
-    console.log("HEADERS:", req.headers);
+
     console.log("BODY RECEBIDO:", req.body);
+    console.log("NOME:", req.body.nome);
 
     const { nome, email, senha } = req.body;
 
