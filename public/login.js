@@ -1,3 +1,23 @@
+const form = document.getElementById('loginForm');
+const mensagem = document.getElementById('mensagem');
+
+// Toggle senha
+document.querySelectorAll('.toggle-password').forEach(button => {
+  button.addEventListener('click', () => {
+    const inputId = button.getAttribute('data-target');
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('img');
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.src = 'assets/ocultarPreto.png';
+    } else {
+      input.type = 'password';
+      icon.src = 'assets/mostrarPreto.png';
+    }
+  });
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -7,22 +27,18 @@ form.addEventListener('submit', async (e) => {
   try {
     const response = await fetch('https://voltsense.com.br/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, senha })
     });
 
-    if (!response.ok) {
-      throw new Error("Erro na requisição");
-    }
-
     const data = await response.json();
+
+    console.log("Login:", data);
 
     if (data.success) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('usuarioId', data.usuarioId);
-      localStorage.setItem('nomeUsuario', data.nome || 'Usuário');
+      localStorage.setItem('nomeUsuario', data.nome ?? 'Usuário');
 
       mensagem.innerText = 'Login realizado com sucesso!';
       mensagem.style.color = "green";
@@ -32,7 +48,7 @@ form.addEventListener('submit', async (e) => {
       }, 800);
 
     } else {
-      mensagem.innerText = data.error || 'Erro ao realizar login';
+      mensagem.innerText = data.error || 'Erro ao logar';
       mensagem.style.color = "red";
     }
 

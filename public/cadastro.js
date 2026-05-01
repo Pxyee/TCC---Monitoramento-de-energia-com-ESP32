@@ -1,74 +1,68 @@
 document.querySelectorAll('.toggle-password').forEach(button => {
-    button.addEventListener('click', () => {
-        const inputId = button.getAttribute('data-target');
-        const input = document.getElementById(inputId);
-    
-        // pega o ícone dentro do botão clicado (não global)
-        const icon = button.querySelector('img');
+  button.addEventListener('click', () => {
+    const inputId = button.getAttribute('data-target');
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('img');
 
     if (input.type === 'password') {
-        input.type = 'text';
-        icon.src = 'assets/ocultarPreto.png';
+      input.type = 'text';
+      icon.src = 'assets/ocultarPreto.png';
     } else {
-        input.type = 'password';
-        icon.src = 'assets/mostrarPreto.png';
+      input.type = 'password';
+      icon.src = 'assets/mostrarPreto.png';
     }
-    });
+  });
 });
 
-
 document.getElementById("cadastroForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const senha = document.getElementById("senha").value;
-    const confirmarSenha = document.getElementById("confirmarSenha").value;
+  const nome = document.getElementById("nome").value; // 🔥 CORREÇÃO
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+  const confirmarSenha = document.getElementById("confirmarSenha").value;
 
-    const mensagem = document.getElementById("mensagem");
+  const mensagem = document.getElementById("mensagem");
 
-    // validação de senha
-    if (senha !== confirmarSenha) {
-        mensagem.innerText = "As senhas não conferem!";
-        mensagem.style.color = "red";
-        return;
+  if (senha !== confirmarSenha) {
+    mensagem.innerText = "As senhas não conferem!";
+    mensagem.style.color = "red";
+    return;
+  }
+
+  try {
+    const resposta = await fetch("https://voltsense.com.br/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nome,
+        email,
+        senha
+      })
+    });
+
+    const dados = await resposta.json();
+
+    console.log("Cadastro:", dados);
+
+    if (dados.success) {
+      mensagem.innerText = "Cadastro realizado com sucesso!";
+      mensagem.style.color = "green";
+
+      setTimeout(() => {
+        window.location.href = "login.html"; // fluxo correto
+      }, 800);
+
+    } else {
+      mensagem.innerText = dados.error || "Erro ao cadastrar";
+      mensagem.style.color = "red";
     }
 
-    try {
-        const resposta = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                nome,
-                email,
-                senha
-            })
-        });
-
-        const dados = await resposta.json();
-
-if (dados.success) {
-    mensagem.innerText = "Cadastro realizado com sucesso!";
-    mensagem.style.color = "green";
-
-    // salva "sessão" simples
-    localStorage.setItem("usuarioLogado", email);
-
-    setTimeout(() => {
-        window.location.href = "dashboard.html";
-    }, 800);
-} else if (dados.error === "Email já registrado") {
-    mensagem.innerText = "Este email já está registrado. Tente outro.";
+  } catch (error) {
+    console.error(error);
+    mensagem.innerText = "Erro ao conectar com o servidor";
     mensagem.style.color = "red";
-} else {
-    mensagem.innerText = dados.error || "Erro ao realizar cadastro";
-    mensagem.style.color = "red";
-}
-
-    } catch (error) {
-        console.error("Erro no cadastro:", error);
-        mensagem.innerText = "Erro ao conectar com o servidor";
-        mensagem.style.color = "red";
-    }
+  }
 });

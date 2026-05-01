@@ -1,4 +1,4 @@
-// 🔐 Verifica se está logado
+// 🔐 VERIFICA LOGIN
 const token = localStorage.getItem("token");
 const nome = localStorage.getItem("nomeUsuario");
 
@@ -6,15 +6,19 @@ const isLocal =
   window.location.hostname === "127.0.0.1" ||
   window.location.hostname === "localhost";
 
+// 🔒 proteção (ative depois)
 // if ((!token || !nome) && !isLocal) {
 //   window.location.href = "login.html";
 // }
 
-// 👤 Nome do usuário
-if (nome) {
+// 👤 NOME DO USUÁRIO
+if (nome && nome !== "null" && nome !== "undefined") {
   const primeiroNome = nome.split(" ")[0];
   const nomeEl = document.getElementById("nomeUsuario");
+
   if (nomeEl) nomeEl.innerText = primeiroNome;
+} else {
+  console.warn("Nome não encontrado no localStorage");
 }
 
 // 📂 SIDEBAR
@@ -45,13 +49,15 @@ if (toggleBtn) {
   });
 }
 
-// restaurar sidebar
+// 🔄 RESTAURA SIDEBAR
 window.addEventListener("load", function () {
   const sidebarState = localStorage.getItem("sidebarCollapsed");
+
   if (sidebarState === "true") {
     sidebar.classList.add("collapsed");
-    updateMargins();
   }
+
+  updateMargins();
 });
 
 // 🚪 LOGOUT
@@ -66,7 +72,7 @@ if (logoutBtn) {
   });
 }
 
-// 📊 DADOS FAKE
+// 📊 DADOS (SIMULAÇÃO)
 function atualizarDados() {
   const tensao = (220 + Math.random() * 10).toFixed(1);
   const corrente = (10 + Math.random() * 5).toFixed(2);
@@ -82,11 +88,13 @@ function atualizarDados() {
 atualizarDados();
 setInterval(atualizarDados, 2000);
 
-// 📈 GRÁFICO
+// 📈 GRÁFICO PRINCIPAL
 const ctx = document.getElementById("graficoConsumo");
 
+let grafico;
+
 if (ctx) {
-  new Chart(ctx, {
+  grafico = new Chart(ctx, {
     type: "line",
     data: {
       labels: ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00"],
@@ -108,7 +116,7 @@ if (ctx) {
   });
 }
 
-// 📊 RESUMO
+// 📊 RESUMO DA SEMANA
 function atualizarResumo(dados) {
   const numeros = dados.map(Number);
 
@@ -119,15 +127,18 @@ function atualizarResumo(dados) {
 
   document.getElementById("totalSemana").textContent =
     total.toFixed(2) + " kWh";
+
   document.getElementById("mediaSemana").textContent =
     media.toFixed(2) + " kWh";
+
   document.getElementById("maxSemana").textContent =
     max.toFixed(2) + " kWh";
+
   document.getElementById("minSemana").textContent =
     min.toFixed(2) + " kWh";
 }
 
-// 📅 CONVERTER SEMANA → DATAS
+// 📅 CONVERTE SEMANA (ISO)
 function getDatasSemana(weekString) {
   const [ano, semana] = weekString.split("-W");
 
@@ -143,25 +154,32 @@ function getDatasSemana(weekString) {
   return { inicio, fim };
 }
 
-// 📅 FILTRO SEMANA (CORRIGIDO)
+// 📅 FILTRO SEMANA
 const filtroSemana = document.getElementById("filtroSemana");
 
 if (filtroSemana) {
   filtroSemana.addEventListener("change", function () {
     const valor = this.value;
 
-    console.log("Semana selecionada:", valor);
+    if (!valor) return;
 
     const { inicio, fim } = getDatasSemana(valor);
 
+    console.log("Semana:", valor);
     console.log("De:", inicio);
     console.log("Até:", fim);
 
-    // 🔥 dados fake por enquanto
+    // 🔥 simulação
     const novosDados = Array.from({ length: 7 }, () =>
       (1 + Math.random() * 2).toFixed(2)
     );
 
     atualizarResumo(novosDados);
   });
-} 
+}
+
+// 🚀 INIT RESUMO PADRÃO
+(function initResumo() {
+  const dadosIniciais = [1.2, 1.5, 1.8, 2.0, 1.7, 2.1, 1.9];
+  atualizarResumo(dadosIniciais);
+})();
