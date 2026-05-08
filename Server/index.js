@@ -144,6 +144,39 @@ app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com 
 }
 });
 
+app.post('/api/iot/energia', async (req, res) => { //novo
+
+    try {
+
+        const { tensao, corrente, kwh } = req.body;
+
+        console.log(req.body);
+
+        const [result] = await pool.execute(
+            `
+            INSERT INTO leituras
+            (tensao, corrente, kwh)
+            VALUES (?, ?, ?)
+            `,
+            [tensao, corrente, kwh]
+        );
+
+        res.json({
+            success: true,
+            insertedId: result.insertId
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno'
+        });
+    }
+});
+
 // endpoint para buscar leituras
 
 app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com middleware de verificação de token
