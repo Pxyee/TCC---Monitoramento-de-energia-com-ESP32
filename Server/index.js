@@ -134,8 +134,8 @@ app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com 
             return res.status(400).json({ success: false, error: 'tensao,corrente e kwh devem ser números' }); //extrai dados, valida se são números
         } 
     const [result] = await pool.execute(
-        "INSERT INTO leituras (usuario_id, tensao, corrente, kwh) VALUES (?, ?, ?, ?)", // insere leitura no banco 
-        [req.usuarioId, tensao, corrente, kwh]
+        "INSERT INTO leituras (tensao, corrente, kwh) VALUES (?, ?, ?, ?)", // insere leitura no banco 
+        [tensao, corrente, kwh]
     );
     res.json({ success: true, insertedId: result.insertId }); // retorna sucesso com id inserido
 } catch (error) { 
