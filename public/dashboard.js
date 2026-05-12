@@ -138,7 +138,7 @@ async function atualizarDados() {
   try {
 
     const response =
-      await fetch("http://voltsense.com.br:3000/api/tempo-real");
+      await fetch("/api/tempo-real");
 
     const dados = await response.json();
 
@@ -211,7 +211,7 @@ async function carregarGraficoDia() {
   try {
 
     const response =
-      await fetch("http://voltsense.com.br:3000/api/consumo-dia");
+      await fetch("/api/consumo-dia");
 
     const dados = await response.json();
 
@@ -295,7 +295,7 @@ async function carregarGraficoMes() {
 
   try {
 
-    const response = await fetch("http://voltsense.com.br:3000/api/consumo-mes")
+    const response = await fetch("/api/consumo-mes");
 
     const dados = await response.json();
 
