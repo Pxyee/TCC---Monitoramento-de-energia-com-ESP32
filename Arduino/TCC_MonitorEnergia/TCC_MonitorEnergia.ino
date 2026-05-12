@@ -42,7 +42,7 @@ unsigned int contadorBotao = 0;
 String wifi_ssid = "";
 String wifi_password = "";
 //  COLOQUE A URL DO SEU SERVIDOR AQUI (ex: http://seu-ip:3000)
-String server_url = "https://voltsense.com.br/api/energia";
+String server_url = "https://voltsense.com.br";
 bool conectado = false;
 bool apagar = false;
 

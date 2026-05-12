@@ -134,7 +134,7 @@ app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com 
             return res.status(400).json({ success: false, error: 'tensao,corrente e kwh devem ser números' }); //extrai dados, valida se são números
         } 
     const [result] = await pool.execute(
-        "INSERT INTO leituras (tensao, corrente, kwh) VALUES (?, ?, ?, ?)", // insere leitura no banco 
+        "INSERT INTO leituras (tensao, corrente, kwh) VALUES (?, ?, ?)", // insere leitura no banco 
         [tensao, corrente, kwh]
     );
     res.json({ success: true, insertedId: result.insertId }); // retorna sucesso com id inserido
@@ -195,6 +195,55 @@ app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com m
 //app.get('/', (req, res) => {
   //  res.send('API Voltsense funcionando com sucesso!');
 //});
+
+// ======================================================
+// 📊 CONSUMO ACUMULADO DO MÊS
+// ======================================================
+// Retorna:
+// [
+//   {
+//      dia: 1,
+//      total: 12.5
+//   }
+// ]
+// ======================================================
+
+app.get('/api/consumo-mes', async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(`
+            
+            SELECT
+                DAY(instante) AS dia,
+                SUM(kwh) AS total
+
+            FROM leituras
+
+            WHERE MONTH(instante) = MONTH(CURDATE())
+            AND YEAR(instante) = YEAR(CURDATE())
+
+            GROUP BY DAY(instante)
+
+            ORDER BY dia ASC
+
+        `);
+
+        res.json(rows);
+
+    } catch (error) {
+
+        console.error('Erro GET /api/consumo-mes:', error);
+
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno do servidor'
+        });
+
+    }
+
+});
+
 
 // iniciar servidor
 
