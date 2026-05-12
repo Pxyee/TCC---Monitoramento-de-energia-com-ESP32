@@ -33,6 +33,8 @@ const byte DNS_PORT = 53;
 DNSServer dnsServer;
 WebServer server(80);
 
+unsigned char noReset = 0;
+
 const char* ssid_ap = "MonitorEnergia";
 const char* password_ap = "12345678";
 extern const char* paginaConfig;
@@ -42,15 +44,17 @@ unsigned int contadorBotao = 0;
 String wifi_ssid = "";
 String wifi_password = "";
 //  COLOQUE A URL DO SEU SERVIDOR AQUI (ex: http://seu-ip:3000)
-String server_url = "https://voltsense.com.br";
+String server_url = "http://voltsense.com.br:3000";
 bool conectado = false;
 bool apagar = false;
+bool reset = false;
+
 
 // ========== CONFIGURAÇÕES SENSOR SCT013-020 ==========
 const int pino_adc = 34;           // Pino analógico do ESP32
 const float burden_resistor = 62.0; // Resistência de carga (ohms)
 const float primary_current = 20.0; // SCT013-020 (até 20A) ← ALTERADO
-const float tensao_rede = 220.0;   // Tensão da tomada (V)
+const float tensao_rede = 127.0;   // Tensão da tomada (V)
 const int amostras = 1000;         // Quantidade de leituras por ciclo
 
 // ========== VARIÁVEIS DE LEITURA ==========
@@ -58,7 +62,7 @@ float corrente_rms = 0;
 float potencia = 0;
 float kwh = 0;
 unsigned long ultima_leitura = 0;
-const unsigned long intervalo_leitura = 3600000; // 1 hora em ms
+const unsigned long intervalo_leitura = 5000; // 5 segundos
 
 // ========== ENDEREÇO EEPROM ==========
 const int endereco_eeprom_ssid = 0;
@@ -139,27 +143,40 @@ void salvarWiFiEEPROM() {
 
 void apagarWiFiEEPROM()
 {
-  while(!digitalRead(Reset)) 
+  while(!reset) 
   {
-    contadorBotao++;
+    //contadorBotao++;
     delay(1);
-    if(contadorBotao >= 5000)
+    if(!digitalRead(Reset))
     {
-      Serial.println("RESETANDO");
-      contadorBotao = 0;
-      apagar = true;
+      contadorBotao++;
+      if(contadorBotao >= 5000)
+      {
+        Serial.println("RESETANDO");
+        contadorBotao = 0;
+        reset = 1;
+        apagar = true;
+      }
+    }
+    else
+    {
+      noReset++;
+      if(noReset >= 200)
+      {
+        contadorBotao = 0;
+        noReset = 0;
+        reset = 1;
+      }
     }
   }
-  //else
-  //{
-    contadorBotao = 0;
-  //}
 }
 
 void apagandoWiFiEEPROM()
 {
   if(apagar)
   {
+    digitalWrite(led_vm, HIGH);
+    digitalWrite(led_vd, HIGH);
     delay(1000);
     for (int i = 0; i < EEPROM.length(); i++) 
     {
@@ -167,7 +184,9 @@ void apagandoWiFiEEPROM()
     }
     EEPROM.commit();
     apagar = false;
-    delay(200);
+    delay(3000);
+    digitalWrite(led_vm, LOW);
+    digitalWrite(led_vd, LOW);
     ESP.restart();
   }
 }
@@ -194,9 +213,9 @@ void lerWiFiEEPROM() {
   wifi_ssid = String(ssid_temp);
   wifi_password = String(pass_temp);
   
-  if (wifi_ssid.length() > 0 || wifi_ssid.length() < 255) 
+  if (wifi_ssid.length() > 0 && wifi_ssid.length() < 255) 
   {
-    Serial.println("✓ Credenciais recuperadas da EEPROM!");
+    Serial.println("Credenciais recuperadas da EEPROM!");
     Serial.println("  SSID: " + wifi_ssid);
   }
 }
@@ -204,14 +223,14 @@ void lerWiFiEEPROM() {
 // ========== ENVIAR DADOS AO SERVIDOR ==========
 void enviarDados() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("✗ WiFi não conectado!");
+    Serial.println("WiFi não conectado!");
     return;
   }
   
   HTTPClient http;
   
   // Monta a URL completa
-  String url = server_url + "/api/energia";
+  String url = server_url + "/api/iot/energia";
   
   Serial.print("Enviando dados para: ");
   Serial.println(url);
@@ -235,11 +254,11 @@ void enviarDados() {
   int httpResponseCode = http.POST(json);
   
   if (httpResponseCode == 200) {
-    Serial.println("✓✓✓ Dados enviados com sucesso!");
+    Serial.println("Dados enviados com sucesso!");
     String resposta = http.getString();
     Serial.println("Resposta: " + resposta);
   } else {
-    Serial.print("✗ Erro na resposta HTTP: ");
+    Serial.print("Erro na resposta HTTP: ");
     Serial.println(httpResponseCode);
     if (httpResponseCode > 0) {
       Serial.println("Resposta: " + http.getString());
@@ -267,9 +286,11 @@ void conectarWiFi() {
   
   if (WiFi.status() == WL_CONNECTED) 
   {
-    Serial.println("\n✓ Conectado com sucesso!");
+    Serial.println("\nConectado com sucesso!");
     Serial.print("IP local: ");
     Serial.println(WiFi.localIP());
+
+  
     
     // Desliga o AP quando conectado
     WiFi.softAPdisconnect(true);
@@ -279,13 +300,12 @@ void conectarWiFi() {
   } 
   else 
   {
-    Serial.println("\n✗ Falha na conexão!");
+    Serial.println("\nFalha na conexão!");
     Serial.println("Reabrindo portal de configuração...");
     WiFi.softAP(ssid_ap, password_ap);
   }
 }
 
-// ========== SETUP ==========
 void setup() {
   Serial.begin(115200);
 
@@ -294,7 +314,7 @@ void setup() {
   pinMode(led_vm, OUTPUT);
 
   digitalWrite(led_vd, LOW);
-  digitalWrite(led_vm, HIGH); // IMPLEMENTAR DEPOIS FUNÇÃO PARA TROCAR AS CORES
+  digitalWrite(led_vm, LOW); 
 
   delay(1000);
   
@@ -314,7 +334,7 @@ void setup() {
   
   // Se encontrou credenciais, tenta conectar direto
   if (wifi_ssid.length() > 0) {
-    Serial.println("► Tentando conectar com credenciais salvas...");
+    Serial.println("Tentando conectar com credenciais salvas...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
     
@@ -326,7 +346,7 @@ void setup() {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\n✓ Conectado!");
+      Serial.println("\nConectado!");
       Serial.print("   IP: ");
       Serial.println(WiFi.localIP());
       ultima_leitura = millis();
@@ -335,7 +355,7 @@ void setup() {
   }
   
   // Se chegou aqui, abre portal de configuração
-  Serial.println("► Abrindo portal WiFi de configuração...");
+  Serial.println("Abrindo portal WiFi de configuração...");
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(ssid_ap, password_ap);
   
@@ -358,7 +378,7 @@ void setup() {
     
     server.send(200, "text/html", "<h3>Conectando...</h3><p>O ESP32 vai se conectar agora.</p>");
     
-    // Salva SenhaAo na EEPROM para próxima vez
+    // Salva Senha na EEPROM para próxima vez
     salvarWiFiEEPROM();
     
     delay(500);
@@ -376,6 +396,18 @@ void setup() {
 // ========== LOOP ==========
 void loop() 
 {
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    digitalWrite(led_vm, LOW);
+    digitalWrite(led_vd, HIGH);
+  } 
+  else 
+  {
+    digitalWrite(led_vm, HIGH);
+    digitalWrite(led_vd, LOW);
+  }
+
+
   // Se em modo AP (portal de configuração ativo)
   if (WiFi.getMode() == WIFI_AP_STA || WiFi.getMode() == WIFI_AP) {
     dnsServer.processNextRequest();
@@ -388,22 +420,22 @@ void loop()
     unsigned long agora = millis();
     // Verifica se passou 1 hora desde última leitura
     if (agora - ultima_leitura >= intervalo_leitura) {
-      Serial.println("\n▶ [AÇÃO] Lendo sensor...");
+      Serial.println("\n[AÇÃO] Lendo sensor...");
       lerSensor();
       
-      Serial.println("▶ [AÇÃO] Enviando dados ao servidor...");
+      Serial.println("[AÇÃO] Enviando dados ao servidor...");
       enviarDados();
       
       ultima_leitura = agora;
       
       unsigned long proxima = intervalo_leitura / 60000; // Converte para minutos
-      Serial.print("▶ Próxima leitura em ");
+      Serial.print("Próxima leitura em ");
       Serial.print(proxima);
       Serial.println(" minutos.\n");
     }
   } else {
     // Perdeu conexão, tenta reconectar
-    Serial.println("✗ WiFi desconectado. Tentando reconectar...");
+    Serial.println("WiFi desconectado. Tentando reconectar...");
     WiFi.reconnect();
     delay(5000);
   }

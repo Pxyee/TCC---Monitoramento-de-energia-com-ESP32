@@ -196,6 +196,40 @@ app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com m
   //  res.send('API Voltsense funcionando com sucesso!');
 //});
 
+
+// ======================================================
+// 📊 CONSUMO DO DIA
+// ======================================================
+
+app.get('/api/consumo-dia', async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(`
+            SELECT
+                DATE_FORMAT(instante, '%H:%i') AS hora,
+                kwh
+            FROM leituras
+            WHERE DATE(instante) = CURDATE()
+            ORDER BY instante ASC
+        `);
+
+        res.json(rows);
+
+    } catch (error) {
+
+        console.error('Erro ao buscar consumo do dia:', error);
+
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno do servidor'
+        });
+
+    }
+
+});
+
+
 // ======================================================
 // 📊 CONSUMO ACUMULADO DO MÊS
 // ======================================================
@@ -244,6 +278,57 @@ app.get('/api/consumo-mes', async (req, res) => {
 
 });
 
+
+// ======================================================
+// ⚡ ÚLTIMA LEITURA
+// ======================================================
+
+app.get('/api/tempo-real', async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(`
+            
+            SELECT
+                tensao,
+                corrente,
+                kwh,
+                instante
+
+            FROM leituras
+
+            ORDER BY instante DESC
+
+            LIMIT 1
+
+        `);
+
+        // sem dados
+        if (rows.length === 0) {
+
+            return res.json({
+                tensao: null,
+                corrente: null,
+                kwh: null,
+                instante: null
+            });
+
+        }
+
+        res.json(rows[0]);
+
+    } catch (error) {
+
+        console.error('Erro GET /api/tempo-real:', error);
+
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno do servidor'
+        });
+
+    }
+
+});
 
 // iniciar servidor
 

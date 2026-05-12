@@ -137,19 +137,30 @@ async function atualizarDados() {
 
   try {
 
-    // ==================================================
-    // 🔥 FUTURA API DOS CARDS
-    // ==================================================
-
-    /*
-    const response = await fetch("/api/tempo-real");
+    const response =
+      await fetch("http://voltsense.com.br:3000/api/tempo-real");
 
     const dados = await response.json();
 
-    const tensao = dados.tensao;
-    const corrente = dados.corrente;
-    const consumo = dados.kwh;
-    */
+    document.getElementById("tensao").textContent =
+      dados.tensao + " V";
+
+    document.getElementById("corrente").textContent =
+      dados.corrente + " A";
+
+    document.getElementById("consumo").textContent =
+      dados.kwh + " kWh";
+
+    document.getElementById("atualizacao").textContent =
+      new Date(dados.instante).toLocaleTimeString();
+
+  } catch (erro) {
+
+    console.error("Erro ao atualizar cards:", erro);
+
+  }
+
+}
 
     // TEMPORÁRIO
     const tensao = "--";
@@ -159,6 +170,7 @@ async function atualizarDados() {
     const consumo = "--";
 
 
+    try {
     document.getElementById("tensao").textContent =
       tensao + " V";
 
@@ -170,14 +182,11 @@ async function atualizarDados() {
 
     document.getElementById("atualizacao").textContent =
       new Date().toLocaleTimeString();
-
-  } catch (erro) {
-
+    } catch (erro) {
     console.error("Erro ao atualizar cards:", erro);
-
   }
 
-}
+
 
 
 // inicia cards
@@ -197,36 +206,25 @@ const ctxDia = document.getElementById("graficoConsumo");
 
 let graficoDia;
 
-
 async function carregarGraficoDia() {
 
   try {
 
-    // ==================================================
-    // 🔥 FUTURA API DO DIA
-    // ==================================================
-
-    /*
-    const response = await fetch("/api/consumo-dia");
+    const response =
+      await fetch("http://voltsense.com.br:3000/api/consumo-dia");
 
     const dados = await response.json();
-    */
-
-    // TEMPORÁRIO
-    const dados = [];
 
     // horários
     const labelsDia = dados.map(item => item.hora);
 
-    // consumos
+    // consumo
     const dadosDia = dados.map(item => item.kwh);
-
 
     // destrói gráfico antigo
     if (graficoDia) {
       graficoDia.destroy();
     }
-
 
     graficoDia = new Chart(ctxDia, {
 
@@ -267,15 +265,20 @@ async function carregarGraficoDia() {
 
   } catch (erro) {
 
-    console.error("Erro ao carregar gráfico do dia:", erro);
+    console.error(
+      "Erro ao carregar gráfico do dia:",
+      erro
+    );
 
   }
 
 }
 
-
-// inicia gráfico do dia
+// inicia gráfico
 carregarGraficoDia();
+
+// atualiza automaticamente
+setInterval(carregarGraficoDia, 10000);
 
 
 
