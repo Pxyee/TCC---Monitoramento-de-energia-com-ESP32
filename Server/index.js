@@ -330,6 +330,40 @@ app.get('/api/tempo-real', async (req, res) => {
 
 });
 
+    // ======================================================
+// 🌐 ROTAS FRONTEND
+// ======================================================
+
+// LOGIN
+app.get('/', (req, res) => {
+
+    res.sendFile(
+        path.join(__dirname, '../public/login.html')
+    );
+
+});
+
+
+// DASHBOARD
+app.get('/dashboard', (req, res) => {
+
+    res.sendFile(
+        path.join(__dirname, '../public/dashboard.html')
+    );
+
+});
+
+
+// CADASTRO
+app.get('/cadastro', (req, res) => {
+
+    res.sendFile(
+        path.join(__dirname, '../public/cadastro.html')
+    );
+
+});
+
+
 // iniciar servidor
 
 const PORT = process.env.PORT || 3000;  // pega variavel de ambiente ou usa 3000

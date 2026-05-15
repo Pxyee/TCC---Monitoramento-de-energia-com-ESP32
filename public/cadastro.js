@@ -17,7 +17,7 @@ document.querySelectorAll('.toggle-password').forEach(button => {
 document.getElementById("cadastroForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const nome = document.getElementById("nome").value; // 🔥 CORREÇÃO
+  const nome = document.getElementById("nome").value; 
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
   const confirmarSenha = document.getElementById("confirmarSenha").value;
@@ -52,7 +52,7 @@ document.getElementById("cadastroForm").addEventListener("submit", async (e) => 
       mensagem.style.color = "green";
 
       setTimeout(() => {
-        window.location.href = "login.html"; // fluxo correto
+        window.location.href = "/login"; // fluxo correto
       }, 800);
 
     } else {

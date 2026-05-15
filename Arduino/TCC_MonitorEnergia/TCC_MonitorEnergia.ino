@@ -12,6 +12,7 @@
 #include <EEPROM.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "EmonLib.h"
 
 #define Reset 12
 #define led_vd 23
@@ -43,7 +44,6 @@ unsigned int contadorBotao = 0;
 
 String wifi_ssid = "";
 String wifi_password = "";
-//  COLOQUE A URL DO SEU SERVIDOR AQUI (ex: http://seu-ip:3000)
 String server_url = "http://voltsense.com.br:3000";
 bool conectado = false;
 bool apagar = false;
@@ -58,7 +58,7 @@ const float tensao_rede = 127.0;   // Tensão da tomada (V)
 const int amostras = 1000;         // Quantidade de leituras por ciclo
 
 // ========== VARIÁVEIS DE LEITURA ==========
-float corrente_rms = 0;
+double corrente_rms = 0;
 float potencia = 0;
 float kwh = 0;
 unsigned long ultima_leitura = 0;
@@ -69,10 +69,21 @@ const int endereco_eeprom_ssid = 0;
 const int endereco_eeprom_pass = 50;
 const int endereco_eeprom_url = 100;
 
+EnergyMonitor emon1;
 
 // ========== LER SENSOR SCT013 ==========
 void lerSensor() {
-  double soma_quadrados = 0;
+
+  corrente_rms = emon1.calcIrms(4000);  // Calculate Irms only
+  if (corrente_rms < 0.15)
+   {
+  corrente_rms = 0;
+  }
+  Serial.print(corrente_rms * tensao_rede);           // Apparent power
+  Serial.print(" ");
+  Serial.println(corrente_rms);               // Irms
+
+ /* double soma_quadrados = 0;
   
   // Coleta múltiplas amostras para calcular RMS
   for (int i = 0; i < amostras; i++) {
@@ -94,16 +105,19 @@ void lerSensor() {
     soma_quadrados += corrente_instantanea * corrente_instantanea;
     
     delay(1); // 1ms entre leituras
-  }
+  } 
+  
   
   // Calcula RMS: sqrt(média dos quadrados)
-  corrente_rms = sqrt(soma_quadrados / amostras);
+  corrente_rms = sqrt(soma_quadrados / amostras);*/
   
   // Calcula potência: P = V × I (em Watts)
   potencia = tensao_rede * corrente_rms;
   
   // Estima KWh (simplificado: potência em kW)
-  kwh = potencia / 1000.0;
+  //kwh = potencia / 1000.0; 
+  float horas = intervalo_leitura / 3600000.0;
+  kwh += (potencia * horas) / 1000.0;
   
   // Printa no Serial para debug
   Serial.println("\n=== LEITURA DO SENSOR ===");
@@ -307,6 +321,12 @@ void conectarWiFi() {
 }
 
 void setup() {
+
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_6db);
+
+  emon1.current(pino_adc, 3.2);           // Corrente: calibração
+
   Serial.begin(115200);
 
   pinMode(Reset, INPUT_PULLUP);

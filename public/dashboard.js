@@ -6,10 +6,10 @@ const isLocal =
   window.location.hostname === "127.0.0.1" ||
   window.location.hostname === "localhost";
 
-// 🔒 proteção (ative depois)
-// if ((!token || !nome) && !isLocal) {
-//   window.location.href = "login.html";
-// }
+  
+  if ((!token || !nome) && !isLocal) {
+    window.location.href = "/login";
+}
 
 
 // ======================================================
@@ -130,8 +130,6 @@ if (logoutBtn) {
 // ======================================================
 // 📊 ATUALIZA CARDS
 // ======================================================
-// depois substituir pela API
-// ======================================================
 
 async function atualizarDados() {
 
@@ -143,13 +141,13 @@ async function atualizarDados() {
     const dados = await response.json();
 
     document.getElementById("tensao").textContent =
-      dados.tensao + " V";
+      Number(dados.tensao).toFixed(2) + " V";
 
     document.getElementById("corrente").textContent =
-      dados.corrente + " A";
+      Number(dados.corrente).toFixed(2) + " A";
 
     document.getElementById("consumo").textContent =
-      dados.kwh + " kWh";
+      Number(dados.kwh).toFixed(3) + " kWh";
 
     document.getElementById("atualizacao").textContent =
       new Date(dados.instante).toLocaleTimeString();
@@ -161,32 +159,6 @@ async function atualizarDados() {
   }
 
 }
-
-    // TEMPORÁRIO
-    const tensao = "--";
-
-    const corrente = "--";
-
-    const consumo = "--";
-
-
-    try {
-    document.getElementById("tensao").textContent =
-      tensao + " V";
-
-    document.getElementById("corrente").textContent =
-      corrente + " A";
-
-    document.getElementById("consumo").textContent =
-      consumo + " kWh";
-
-    document.getElementById("atualizacao").textContent =
-      new Date().toLocaleTimeString();
-    } catch (erro) {
-    console.error("Erro ao atualizar cards:", erro);
-  }
-
-
 
 
 // inicia cards
@@ -219,11 +191,34 @@ async function carregarGraficoDia() {
     const labelsDia = dados.map(item => item.hora);
 
     // consumo
-    const dadosDia = dados.map(item => item.kwh);
+    const dadosDia = dados.map(item => Number(item.kwh));
 
     // destrói gráfico antigo
     if (graficoDia) {
       graficoDia.destroy();
+    }
+
+    // evita erro quando tudo for 0
+    let minY = 0;
+    let maxY = 1;
+
+    if (dadosDia.length > 0) {
+
+      const menor = Math.min(...dadosDia);
+      const maior = Math.max(...dadosDia);
+
+      if (menor !== maior) {
+
+        minY = menor * 0.95;
+        maxY = maior * 1.05;
+
+      } else {
+
+        minY = 0;
+        maxY = maior + 1;
+
+      }
+
     }
 
     graficoDia = new Chart(ctxDia, {
@@ -247,7 +242,9 @@ async function carregarGraficoDia() {
 
             borderWidth: 2,
 
-            pointRadius: 4
+            pointRadius: 2,
+
+            pointHoverRadius: 5
           }
 
         ]
@@ -257,7 +254,29 @@ async function carregarGraficoDia() {
 
         responsive: true,
 
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+
+        animation: false,
+
+        scales: {
+
+          y: {
+
+            beginAtZero: false,
+
+            min: minY,
+
+            max: maxY,
+
+            ticks: {
+
+              precision: 3
+
+            }
+
+          }
+
+        }
 
       }
 
@@ -299,18 +318,30 @@ async function carregarGraficoMes() {
 
     const dados = await response.json();
 
-    // dias
-    const labelsMes = dados.map(item => item.dia);
+    // cria array dos 31 dias
+    const labelsMes = [];
+    const dadosMes = [];
 
-    // consumo
-    const dadosMes = dados.map(item => item.total);
+    // cria objeto para busca rápida
+    const mapaDados = {};
 
+    dados.forEach(item => {
+      mapaDados[item.dia] = item.total;
+    });
+
+    // preenche todos os dias
+    for (let i = 1; i <= 31; i++) {
+
+      labelsMes.push(i);
+
+      // se não existir dia, coloca 0
+      dadosMes.push(mapaDados[i] || 0);
+    }
 
     // destrói gráfico antigo
     if (graficoMes) {
       graficoMes.destroy();
     }
-
 
     graficoMes = new Chart(ctxMes, {
 
@@ -321,7 +352,6 @@ async function carregarGraficoMes() {
         labels: labelsMes,
 
         datasets: [
-
           {
             label: "Consumo mensal (kWh)",
 
@@ -331,7 +361,6 @@ async function carregarGraficoMes() {
 
             borderRadius: 8
           }
-
         ]
       },
 
@@ -339,8 +368,15 @@ async function carregarGraficoMes() {
 
         responsive: true,
 
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
 
+        animation: false,
+
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
       }
 
     });
@@ -356,6 +392,9 @@ async function carregarGraficoMes() {
 
 // inicia gráfico mensal
 carregarGraficoMes();
+
+// atualiza automaticamente
+setInterval(carregarGraficoMes, 30000);
 
 
 
@@ -467,21 +506,6 @@ if (filtroSemana) {
       console.log("De:", inicio);
 
       console.log("Até:", fim);
-
-
-      // ================================================
-      // 🔥 FUTURA API RESUMO SEMANAL
-      // ================================================
-
-      /*
-      const response =
-        await fetch("/api/resumo-semana");
-
-      const dados = await response.json();
-
-      atualizarResumo(dados);
-      */
-
 
       // temporário
       atualizarResumo([]);

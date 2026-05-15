@@ -1,52 +1,190 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
   <link rel="icon" href="assets/favicon.ico">
-  
-  
-  
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
   <title>Voltsense - Login</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="container">
-    <img src="assets/logo voltsense.png" alt="Logo Voltsense" class="logo" />
 
-    <h1 class="audiowide-regular">Voltsense</h1>
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <img
+      src="assets/logo voltsense.png"
+      alt="Logo Voltsense"
+      class="logo"
+    />
+
+    <h1 class="audiowide-regular">
+      Voltsense
+    </h1>
+
     <p>Login do Sistema</p>
 
     <form id="loginForm">
+
       <div class="input-group">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" required />
+
+        <label for="email">
+          E-mail
+        </label>
+
+        <input
+          type="email"
+          id="email"
+          required
+        />
+
       </div>
 
       <div class="input-group">
-        <label for="senha">Senha</label>
+
+        <label for="senha">
+          Senha
+        </label>
+
         <div class="password-wrapper">
-          <input type="password" id="senha" required />
-          <button type="button" class="toggle-password" data-target="senha">
-            <img id="iconeSenha" src="assets/mostrarPreto.png" alt="Mostrar senha">
+
+          <input
+            type="password"
+            id="senha"
+            required
+          />
+
+          <button
+            type="button"
+            class="toggle-password"
+            data-target="senha"
+          >
+
+            <img
+              id="iconeSenha"
+              src="assets/mostrarPreto.png"
+              alt="Mostrar senha"
+            >
+
           </button>
+
         </div>
+
       </div>
 
-      <button type="submit">Entrar</button>
+      <button type="submit">
+        Entrar
+      </button>
+
+      <p class="forgot-password">
+
+        <a href="#" id="abrirModalSenha">
+          Esqueci minha senha
+        </a>
+
+      </p>
+
     </form>
 
     <div id="mensagem"></div>
 
     <div class="footer">
-      Não possui conta? <a href="cadastro.html">Criar cadastro</a>
+
+      Não possui conta?
+      <a href="cadastro.html">
+        Criar cadastro
+      </a>
+
     </div>
+
   </div>
 
+
+  <!-- MODAL ESQUECI SENHA -->
+
+  <div
+    class="modal-overlay"
+    id="modalSenha"
+  >
+
+    <div class="modal-box">
+
+      <h2>
+        Recuperar senha
+      </h2>
+
+      <p>
+        Digite seu e-mail para receber o link de redefinição.
+      </p>
+
+      <input
+        type="email"
+        id="emailRecuperacao"
+        placeholder="Digite seu e-mail"
+      />
+
+      <div class="modal-buttons">
+
+        <button id="cancelarModal">
+          Cancelar
+        </button>
+
+        <button id="enviarRecuperacao">
+          Enviar
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MODAL SUCESSO -->
+<div class="modal-overlay" id="modalSucesso">
+
+  <div class="modal-box sucesso">
+
+    <h2>E-mail enviado</h2>
+
+    <p>
+      A redefinição de senha foi encaminhada
+      para o e-mail informado.
+    </p>
+
+    <button id="fecharSucesso">
+      OK
+    </button>
+
+  </div>
+
+</div>
+
+
   <script src="login.js"></script>
+
 </body>
+
 </html>

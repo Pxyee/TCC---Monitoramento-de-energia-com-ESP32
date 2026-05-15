@@ -163,3 +163,180 @@ button {
   height: 20px;
 }
 
+
+
+/* Modal de Esqueci minha senha */
+.forgot-password {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.forgot-password a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+
+/* MODAL */
+
+.modal-overlay {
+
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0,0,0,0.5);
+
+  display: none;
+
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+.modal-box {
+
+  background: white;
+
+  padding: 30px;
+
+  border-radius: 12px;
+
+  width: 350px;
+
+  text-align: center;
+}
+
+.modal-box h2 {
+
+  margin-bottom: 10px;
+}
+
+.modal-box p {
+
+  margin-bottom: 20px;
+
+  color: #666;
+}
+
+.modal-box input {
+
+  width: 100%;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  border: 1px solid #ccc;
+
+  margin-bottom: 20px;
+}
+
+.modal-buttons {
+
+  display: flex;
+
+  gap: 10px;
+
+  justify-content: center;
+}
+
+.modal-buttons button {
+
+  padding: 10px 20px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+#cancelarModal {
+
+  background: #ccc;
+}
+
+#enviarRecuperacao {
+
+  background: #2563eb;
+
+  color: white;
+}
+
+
+
+.modal-overlay {
+
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,0.5);
+
+  display: none;
+
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999;
+}
+
+.modal-box {
+
+  background: white;
+
+  padding: 30px;
+
+  border-radius: 18px;
+
+  width: 90%;
+  max-width: 400px;
+
+  text-align: center;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-box h2 {
+
+  margin-bottom: 10px;
+}
+
+.modal-box p {
+
+  margin-bottom: 20px;
+
+  color: #555;
+}
+
+.modal-box button {
+
+  padding: 12px 24px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #2563eb;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-weight: bold;
+}
+
+.modal-box button:hover {
+
+  opacity: 0.9;
+}
