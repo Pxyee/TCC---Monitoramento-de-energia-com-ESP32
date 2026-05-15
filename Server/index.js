@@ -280,6 +280,46 @@ app.get('/api/consumo-mes', async (req, res) => {
 
 
 // ======================================================
+// 📊 RESUMO SEMANAL
+// ======================================================
+
+app.get('/api/resumo-semana', async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(`
+
+            SELECT
+                DATE(instante) AS dia,
+                SUM(kwh) AS total
+
+            FROM leituras
+
+            WHERE YEARWEEK(instante, 1) = YEARWEEK(CURDATE(), 1)
+
+            GROUP BY DATE(instante)
+
+            ORDER BY dia ASC
+
+        `);
+
+        res.json(rows);
+
+    } catch (error) {
+
+        console.error('Erro GET /api/resumo-semana:', error);
+
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno do servidor'
+        });
+
+    }
+
+});
+
+
+// ======================================================
 // ⚡ ÚLTIMA LEITURA
 // ======================================================
 

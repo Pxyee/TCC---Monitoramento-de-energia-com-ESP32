@@ -6,9 +6,10 @@ const isLocal =
   window.location.hostname === "127.0.0.1" ||
   window.location.hostname === "localhost";
 
-//if ((!token || !nome) && !isLocal) {
-  //window.location.href = "/login";
-//}
+  
+  if ((!token || !nome) && !isLocal) {
+    window.location.href = "/login";
+}
 
 
 // ======================================================
@@ -140,18 +141,13 @@ async function atualizarDados() {
     const dados = await response.json();
 
     document.getElementById("tensao").textContent =
-      Number(dados.tensao).toFixed(1) + " V";
+      Number(dados.tensao).toFixed(2) + " V";
 
     document.getElementById("corrente").textContent =
       Number(dados.corrente).toFixed(2) + " A";
 
-    const consumo = Number(dados.kwh);
-
     document.getElementById("consumo").textContent =
-
-      consumo < 1
-        ? (consumo * 1000).toFixed(0) + " Wh"
-        : consumo.toFixed(2) + " kWh";
+      Number(dados.kwh).toFixed(3) + " kWh";
 
     document.getElementById("atualizacao").textContent =
       new Date(dados.instante).toLocaleTimeString();
@@ -202,7 +198,7 @@ async function carregarGraficoDia() {
       graficoDia.destroy();
     }
 
-    // limites do gráfico
+    // evita erro quando tudo for 0
     let minY = 0;
     let maxY = 1;
 
@@ -219,7 +215,7 @@ async function carregarGraficoDia() {
       } else {
 
         minY = 0;
-        maxY = maior * 1.2;
+        maxY = maior + 1;
 
       }
 
@@ -236,26 +232,19 @@ async function carregarGraficoDia() {
         datasets: [
 
           {
-            label: "Consumo do dia",
+            label: "Consumo do dia (kWh)",
 
             data: dadosDia,
 
-            tension: 0.5,
-
-            cubicInterpolationMode: 'monotone',
+            tension: 0.4,
 
             fill: true,
 
-            borderWidth: 3,
+            borderWidth: 2,
 
-            pointRadius: 3,
+            pointRadius: 2,
 
-            pointHoverRadius: 6,
-
-            hitRadius: 10,
-
-            backgroundColor:
-              'rgba(54, 162, 235, 0.15)'
+            pointHoverRadius: 5
           }
 
         ]
@@ -269,28 +258,6 @@ async function carregarGraficoDia() {
 
         animation: false,
 
-        plugins: {
-
-          tooltip: {
-
-            callbacks: {
-
-              label: function(context) {
-
-                const valor = context.raw;
-
-                return valor < 1
-                  ? (valor * 1000).toFixed(0) + " Wh"
-                  : valor.toFixed(2) + " kWh";
-
-              }
-
-            }
-
-          }
-
-        },
-
         scales: {
 
           y: {
@@ -303,13 +270,7 @@ async function carregarGraficoDia() {
 
             ticks: {
 
-              callback: function(value) {
-
-                return value < 1
-                  ? (value * 1000) + " Wh"
-                  : value + " kWh";
-
-              }
+              precision: 3
 
             }
 
@@ -332,10 +293,8 @@ async function carregarGraficoDia() {
 
 }
 
-
 // inicia gráfico
 carregarGraficoDia();
-
 
 // atualiza automaticamente
 setInterval(carregarGraficoDia, 10000);
@@ -359,24 +318,24 @@ async function carregarGraficoMes() {
 
     const dados = await response.json();
 
-    // arrays
+    // cria array dos 31 dias
     const labelsMes = [];
     const dadosMes = [];
 
-    // mapa
+    // cria objeto para busca rápida
     const mapaDados = {};
 
     dados.forEach(item => {
       mapaDados[item.dia] = item.total;
     });
 
-    // preenche 31 dias
+    // preenche todos os dias
     for (let i = 1; i <= 31; i++) {
 
       labelsMes.push(i);
 
+      // se não existir dia, coloca 0
       dadosMes.push(mapaDados[i] || 0);
-
     }
 
     // destrói gráfico antigo
@@ -393,7 +352,6 @@ async function carregarGraficoMes() {
         labels: labelsMes,
 
         datasets: [
-
           {
             label: "Consumo mensal (kWh)",
 
@@ -403,9 +361,7 @@ async function carregarGraficoMes() {
 
             borderRadius: 8
           }
-
         ]
-
       },
 
       options: {
@@ -416,50 +372,11 @@ async function carregarGraficoMes() {
 
         animation: false,
 
-        plugins: {
-
-          tooltip: {
-
-            callbacks: {
-
-              label: function(context) {
-
-                const valor = context.raw;
-
-                return valor < 1
-                  ? (valor * 1000).toFixed(0) + " Wh"
-                  : valor.toFixed(2) + " kWh";
-
-              }
-
-            }
-
-          }
-
-        },
-
         scales: {
-
           y: {
-
-            beginAtZero: true,
-
-            ticks: {
-
-              callback: function(value) {
-
-                return value < 1
-                  ? (value * 1000) + " Wh"
-                  : value + " kWh";
-
-              }
-
-            }
-
+            beginAtZero: true
           }
-
         }
-
       }
 
     });
@@ -476,7 +393,6 @@ async function carregarGraficoMes() {
 // inicia gráfico mensal
 carregarGraficoMes();
 
-
 // atualiza automaticamente
 setInterval(carregarGraficoMes, 30000);
 
@@ -488,22 +404,24 @@ setInterval(carregarGraficoMes, 30000);
 
 function atualizarResumo(dados) {
 
+  // sem dados
   if (!dados || dados.length === 0) {
 
     document.getElementById("totalSemana").textContent =
-      "--";
+      "-- kWh";
 
     document.getElementById("mediaSemana").textContent =
-      "--";
+      "-- kWh";
 
     document.getElementById("maxSemana").textContent =
-      "--";
+      "-- kWh";
 
     document.getElementById("minSemana").textContent =
-      "--";
+      "-- kWh";
 
     return;
   }
+
 
   const numeros = dados.map(Number);
 
@@ -531,39 +449,99 @@ function atualizarResumo(dados) {
 }
 
 
+
 // ======================================================
-// 📊 CARREGA RESUMO SEMANAL
+// 📅 CONVERTE SEMANA ISO
 // ======================================================
 
-async function carregarResumoSemana() {
+function getDatasSemana(weekString) {
 
-  try {
+  const [ano, semana] = weekString.split("-W");
 
-    const response =
-      await fetch("/api/resumo-semana");
+  const primeiroDia =
+    new Date(ano, 0, 1 + (semana - 1) * 7);
 
-    const dados = await response.json();
+  const diaSemana = primeiroDia.getDay();
 
-    const valores =
-      dados.map(item => Number(item.total));
+  const inicio = new Date(primeiroDia);
 
-    atualizarResumo(valores);
+  inicio.setDate(
+    primeiroDia.getDate() - diaSemana + 1
+  );
 
-  } catch (erro) {
+  const fim = new Date(inicio);
 
-    console.error(
-      "Erro ao carregar resumo semanal:",
-      erro
-    );
+  fim.setDate(inicio.getDate() + 6);
 
-  }
+  return { inicio, fim };
 
 }
 
 
-// inicia resumo
-carregarResumoSemana();
+
+// ======================================================
+// 📅 FILTRO SEMANA
+// ======================================================
+
+const filtroSemana =
+  document.getElementById("filtroSemana");
 
 
-// atualiza automático
-setInterval(carregarResumoSemana, 30000);
+if (filtroSemana) {
+
+  filtroSemana.addEventListener(
+    "change",
+
+    async function () {
+
+      const valor = this.value;
+
+      if (!valor) return;
+
+      const { inicio, fim } =
+        getDatasSemana(valor);
+
+      console.log("Semana:", valor);
+
+      console.log("De:", inicio);
+
+      console.log("Até:", fim);
+
+      try {
+
+        const response =
+          await fetch("/api/resumo-semana");
+
+        const dados = await response.json();
+
+        const valores =
+          dados.map(item => Number(item.total));
+
+        atualizarResumo(valores);
+
+      } catch (erro) {
+
+        console.error(
+          "Erro ao carregar resumo semanal:",
+          erro
+        );
+
+      }
+
+    }
+
+  );
+
+}
+
+
+
+// ======================================================
+// 🚀 INIT RESUMO
+// ======================================================
+
+(function initResumo() {
+
+  atualizarResumo([]);
+
+})();
