@@ -84,7 +84,7 @@ form.addEventListener('submit', async (e) => {
 
       setTimeout(() => {
 
-        window.location.href = '/login';
+        window.location.href = '/dashboard'; 
 
       }, 800);
 

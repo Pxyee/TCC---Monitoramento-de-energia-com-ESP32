@@ -52,7 +52,7 @@ document.getElementById("cadastroForm").addEventListener("submit", async (e) => 
       mensagem.style.color = "green";
 
       setTimeout(() => {
-        window.location.href = "/login"; // fluxo correto
+        window.location.href = "/"; // fluxo correto
       }, 800);
 
     } else {
