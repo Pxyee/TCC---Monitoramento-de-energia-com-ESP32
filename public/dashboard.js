@@ -487,7 +487,6 @@ function getDatasSemana(weekString) {
 const filtroSemana =
   document.getElementById("filtroSemana");
 
-
 if (filtroSemana) {
 
   filtroSemana.addEventListener(
@@ -499,24 +498,20 @@ if (filtroSemana) {
 
       if (!valor) return;
 
-      const { inicio, fim } =
-        getDatasSemana(valor);
-
-      console.log("Semana:", valor);
-
-      console.log("De:", inicio);
-
-      console.log("Até:", fim);
-
       try {
 
         const response =
           await fetch("/api/resumo-semana");
 
-        const dados = await response.json();
+        const dados =
+          await response.json();
+
+        console.log(dados);
 
         const valores =
-          dados.map(item => Number(item.total));
+          dados.map(item =>
+            Number(item.total)
+          );
 
         atualizarResumo(valores);
 
