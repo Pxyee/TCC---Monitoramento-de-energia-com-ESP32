@@ -63,6 +63,7 @@ float potencia = 0;
 float kwh = 0;
 unsigned long ultima_leitura = 0;
 const unsigned long intervalo_leitura = 30000; // 30 segundos
+int leiturasIgnoradas = 0;
 
 // ========== ENDEREÇO EEPROM ==========
 const int endereco_eeprom_ssid = 0;
@@ -75,6 +76,19 @@ EnergyMonitor emon1;
 void lerSensor() {
 
   corrente_rms = emon1.calcIrms(4000);  // Calculate Irms only
+  // ignora primeiras leituras após ligar
+  if (leiturasIgnoradas < 3) {
+
+    leiturasIgnoradas++;
+
+    corrente_rms = 0;
+
+    Serial.println("Ignorando leitura inicial...");
+
+    return;
+  }
+
+
   if (corrente_rms < 0.15)
    {
   corrente_rms = 0;
@@ -323,7 +337,7 @@ void conectarWiFi() {
 void setup() {
 
   analogReadResolution(12);
-  analogSetAttenuation(ADC_6db);
+  analogSetAttenuation(ADC_11db);
 
   emon1.current(pino_adc, 3.2);           // Corrente: calibração
 
@@ -366,10 +380,21 @@ void setup() {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
+
       Serial.println("\nConectado!");
       Serial.print("   IP: ");
       Serial.println(WiFi.localIP());
+
+      // desliga o Access Point
+      WiFi.softAPdisconnect(true);
+
+      // garante modo somente STA
+      WiFi.mode(WIFI_STA);
+
+      Serial.println("Portal WiFi desativado.");
+
       ultima_leitura = millis();
+
       return; // Sucesso, sai do setup
     }
   }
