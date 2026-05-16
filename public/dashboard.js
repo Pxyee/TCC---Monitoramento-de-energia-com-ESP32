@@ -405,7 +405,7 @@ setInterval(carregarGraficoMes, 30000);
 
 function atualizarResumo(dados) {
 
-  // sem dados
+  // limpa tudo
   if (!dados || dados.length === 0) {
 
     document.getElementById("totalSemana").textContent =
@@ -423,7 +423,6 @@ function atualizarResumo(dados) {
     return;
   }
 
-
   const numeros = dados.map(Number);
 
   const total = numeros.reduce((a, b) => a + b, 0);
@@ -433,7 +432,6 @@ function atualizarResumo(dados) {
   const max = Math.max(...numeros);
 
   const min = Math.min(...numeros);
-
 
   document.getElementById("totalSemana").textContent =
     total.toFixed(2) + " kWh";
@@ -496,11 +494,10 @@ if (filtroSemana) {
 
       const valor = this.value;
 
-      // limpa resumo
+      // sem semana selecionada
       if (!valor) {
 
         atualizarResumo([]);
-
         return;
 
       }
@@ -510,13 +507,18 @@ if (filtroSemana) {
         const response =
           await fetch("/api/resumo-semana");
 
-        const dados =
-          await response.json();
+        const dados = await response.json();
+
+        // sem dados da semana
+        if (!dados || dados.length === 0) {
+
+          atualizarResumo([]);
+          return;
+
+        }
 
         const valores =
-          dados.map(item =>
-            Number(item.total)
-          );
+          dados.map(item => Number(item.total));
 
         atualizarResumo(valores);
 
@@ -526,6 +528,8 @@ if (filtroSemana) {
           "Erro ao carregar resumo semanal:",
           erro
         );
+
+        atualizarResumo([]);
 
       }
 
