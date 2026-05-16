@@ -505,7 +505,9 @@ if (filtroSemana) {
       try {
 
         const response =
-          await fetch("/api/resumo-semana");
+          await fetch(
+            `/api/resumo-semana?semana=${valor}`
+        );
 
         const dados = await response.json();
 

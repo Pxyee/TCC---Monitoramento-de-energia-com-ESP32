@@ -282,6 +282,15 @@ app.get('/api/resumo-semana', async (req, res) => {
 
     try {
 
+        const semana = req.query.semana;
+
+        if (!semana) {
+            return res.json([]);
+        }
+
+        const [ano, numeroSemana] =
+            semana.split('-W');
+
         const [rows] = await pool.execute(`
 
             SELECT
@@ -290,19 +299,23 @@ app.get('/api/resumo-semana', async (req, res) => {
 
             FROM leituras
 
-            WHERE YEARWEEK(instante, 1) = YEARWEEK(CURDATE(), 1)
+            WHERE YEAR(instante) = ?
+            AND WEEK(instante, 1) = ?
 
             GROUP BY DATE(instante)
 
             ORDER BY dia ASC
 
-        `);
+        `, [ano, numeroSemana]);
 
         res.json(rows);
 
     } catch (error) {
 
-        console.error('Erro GET /api/resumo-semana:', error);
+        console.error(
+            'Erro GET /api/resumo-semana:',
+            error
+        );
 
         res.status(500).json({
             success: false,
