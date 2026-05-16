@@ -242,22 +242,21 @@ app.get('/api/consumo-dia', async (req, res) => {
 // ]
 // ======================================================
 
-app.get('/api/consumo-mes', async (req, res) => {
+app.get('/api/resumo-semana', async (req, res) => {
 
     try {
 
         const [rows] = await pool.execute(`
-            
+
             SELECT
-                DAY(instante) AS dia,
-                SUM(kwh) AS total
+                DATE(instante) AS dia,
+                MAX(kwh) - MIN(kwh) AS total
 
             FROM leituras
 
-            WHERE MONTH(instante) = MONTH(CURDATE())
-            AND YEAR(instante) = YEAR(CURDATE())
+            WHERE YEARWEEK(instante, 1) = YEARWEEK(CURDATE(), 1)
 
-            GROUP BY DAY(instante)
+            GROUP BY DATE(instante)
 
             ORDER BY dia ASC
 
@@ -267,7 +266,7 @@ app.get('/api/consumo-mes', async (req, res) => {
 
     } catch (error) {
 
-        console.error('Erro GET /api/consumo-mes:', error);
+        console.error('Erro GET /api/resumo-semana:', error);
 
         res.status(500).json({
             success: false,
