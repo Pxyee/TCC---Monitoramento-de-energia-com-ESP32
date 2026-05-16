@@ -496,7 +496,14 @@ if (filtroSemana) {
 
       const valor = this.value;
 
-      if (!valor) return;
+      // limpa resumo
+      if (!valor) {
+
+        atualizarResumo([]);
+
+        return;
+
+      }
 
       try {
 
@@ -505,8 +512,6 @@ if (filtroSemana) {
 
         const dados =
           await response.json();
-
-        console.log(dados);
 
         const valores =
           dados.map(item =>

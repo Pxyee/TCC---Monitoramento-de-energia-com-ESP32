@@ -62,7 +62,7 @@ double corrente_rms = 0;
 float potencia = 0;
 float kwh = 0;
 unsigned long ultima_leitura = 0;
-const unsigned long intervalo_leitura = 5000; // 5 segundos
+const unsigned long intervalo_leitura = 30000; // 30 segundos
 
 // ========== ENDEREÇO EEPROM ==========
 const int endereco_eeprom_ssid = 0;
