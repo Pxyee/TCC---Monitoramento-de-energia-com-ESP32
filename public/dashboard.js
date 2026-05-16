@@ -236,7 +236,8 @@ async function carregarGraficoDia() {
 
             data: dadosDia,
 
-            tension: 0.4,
+            tension: 0.5,
+            cubicInterpolationMode: 'monotone',
 
             fill: true,
 

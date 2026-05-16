@@ -208,9 +208,10 @@ app.get('/api/consumo-dia', async (req, res) => {
         const [rows] = await pool.execute(`
             SELECT
                 DATE_FORMAT(instante, '%H:%i') AS hora,
-                kwh
+                MAX(kwh) AS kwh
             FROM leituras
             WHERE DATE(instante) = CURDATE()
+            GROUP BY DATE_FORMAT(instante, '%H:%i')
             ORDER BY instante ASC
         `);
 
@@ -233,30 +234,26 @@ app.get('/api/consumo-dia', async (req, res) => {
 // ======================================================
 // 📊 CONSUMO ACUMULADO DO MÊS
 // ======================================================
-// Retorna:
-// [
-//   {
-//      dia: 1,
-//      total: 12.5
-//   }
-// ]
+// ======================================================
+// 📊 CONSUMO ACUMULADO DO MÊS
 // ======================================================
 
-app.get('/api/resumo-semana', async (req, res) => {
+app.get('/api/consumo-mes', async (req, res) => {
 
     try {
 
         const [rows] = await pool.execute(`
 
             SELECT
-                DATE(instante) AS dia,
+                DAY(instante) AS dia,
                 MAX(kwh) - MIN(kwh) AS total
 
             FROM leituras
 
-            WHERE YEARWEEK(instante, 1) = YEARWEEK(CURDATE(), 1)
+            WHERE MONTH(instante) = MONTH(CURDATE())
+            AND YEAR(instante) = YEAR(CURDATE())
 
-            GROUP BY DATE(instante)
+            GROUP BY DAY(instante)
 
             ORDER BY dia ASC
 
@@ -266,7 +263,7 @@ app.get('/api/resumo-semana', async (req, res) => {
 
     } catch (error) {
 
-        console.error('Erro GET /api/resumo-semana:', error);
+        console.error('Erro GET /api/consumo-mes:', error);
 
         res.status(500).json({
             success: false,
@@ -277,6 +274,9 @@ app.get('/api/resumo-semana', async (req, res) => {
 
 });
 
+// ======================================================
+// 📊 RESUMO SEMANAL
+// ======================================================
 
 // ======================================================
 // 📊 RESUMO SEMANAL
@@ -290,7 +290,7 @@ app.get('/api/resumo-semana', async (req, res) => {
 
             SELECT
                 DATE(instante) AS dia,
-                SUM(kwh) AS total
+                MAX(kwh) - MIN(kwh) AS total
 
             FROM leituras
 
