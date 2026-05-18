@@ -13,6 +13,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "EmonLib.h"
+#include <vector>
+#include <time.h>
 
 #define Reset 12
 #define led_vd 23
@@ -56,6 +58,11 @@ const float burden_resistor = 62.0; // Resistência de carga (ohms)
 const float primary_current = 20.0; // SCT013-020 (até 20A) ← ALTERADO
 const float tensao_rede = 127.0;   // Tensão da tomada (V)
 const int amostras = 1000;         // Quantidade de leituras por ciclo
+int ultimoDia = -1;
+float consumoDiario = 0;
+float consumoMensal[31] = {0};
+std::vector<float> historicoConsumo;
+std::vector<String> historicoHorario;
 
 // ========== VARIÁVEIS DE LEITURA ==========
 double corrente_rms = 0;
@@ -131,7 +138,11 @@ void lerSensor() {
   // Estima KWh (simplificado: potência em kW)
   //kwh = potencia / 1000.0; 
   float horas = intervalo_leitura / 3600000.0;
-  kwh += (potencia * horas) / 1000.0;
+  float consumoAtual = (potencia * horas) / 1000.0;
+
+
+  kwh += consumoAtual;
+  consumoDiario += consumoAtual;
   
   // Printa no Serial para debug
   Serial.println("\n=== LEITURA DO SENSOR ===");
@@ -143,6 +154,17 @@ void lerSensor() {
   Serial.println(" W");
   Serial.print("KWh (estimado): ");
   Serial.println(kwh, 4);
+  time_t now = time(nullptr);
+  struct tm *timeinfo = localtime(&now);
+
+  char horario[6];
+
+  sprintf(horario, "%02d:%02d",
+        timeinfo->tm_hour,
+        timeinfo->tm_min);
+
+  historicoHorario.push_back(String(horario));
+  historicoConsumo.push_back(consumoDiario);
   Serial.println("=======================\n");
 }
 
@@ -267,11 +289,29 @@ void enviarDados() {
   http.addHeader("Content-Type", "application/json");
   
   // Monta JSON com dados
-  StaticJsonDocument<200> doc;
+  DynamicJsonDocument doc(4096);
   doc["tensao"] = tensao_rede;
   doc["corrente"] = corrente_rms;
-  doc["kwh"] = kwh;
+  doc["kwh"] = consumoDiario;
   
+  JsonArray mensal = doc.createNestedArray("mensal");
+
+  for (int i = 0; i < 31; i++) {
+    mensal.add(consumoMensal[i]);
+  }
+
+  JsonArray labels = doc.createNestedArray("labels");
+
+  for (String h : historicoHorario) {
+    labels.add(h);
+  }
+
+  JsonArray dados = doc.createNestedArray("dados");
+
+  for (float v : historicoConsumo) {
+    dados.add(v);
+  }
+
   String json;
   serializeJson(doc, json);
   
@@ -337,7 +377,7 @@ void conectarWiFi() {
 void setup() {
 
   analogReadResolution(12);
-  analogSetAttenuation(ADC_11db);
+  analogSetAttenuation(ADC_6db);
 
   emon1.current(pino_adc, 3.2);           // Corrente: calibração
 
@@ -380,21 +420,13 @@ void setup() {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
-
       Serial.println("\nConectado!");
       Serial.print("   IP: ");
       Serial.println(WiFi.localIP());
 
-      // desliga o Access Point
-      WiFi.softAPdisconnect(true);
-
-      // garante modo somente STA
-      WiFi.mode(WIFI_STA);
-
-      Serial.println("Portal WiFi desativado.");
+      configTime(-3 * 3600, 0, "pool.ntp.org");
 
       ultima_leitura = millis();
-
       return; // Sucesso, sai do setup
     }
   }
@@ -441,6 +473,33 @@ void setup() {
 // ========== LOOP ==========
 void loop() 
 {
+  time_t now = time(nullptr);
+  struct tm *timeinfo = localtime(&now);
+
+  int diaAtual = timeinfo->tm_mday;
+
+  if (ultimoDia == -1) {
+    ultimoDia = diaAtual;
+  }
+
+  if (diaAtual != ultimoDia) {
+
+    Serial.println("NOVO DIA DETECTADO!");
+
+    // salva consumo do dia
+    consumoMensal[ultimoDia - 1] = consumoDiario;
+
+    // zera consumo diário
+    consumoDiario = 0;
+
+    // limpa gráfico diário
+    historicoConsumo.clear();
+    historicoHorario.clear();
+
+    // atualiza dia
+    ultimoDia = diaAtual;
+  }
+
   if (WiFi.status() == WL_CONNECTED)
   {
     digitalWrite(led_vm, LOW);
@@ -463,7 +522,7 @@ void loop()
   // Se conectado ao WiFi
   if (WiFi.status() == WL_CONNECTED) {
     unsigned long agora = millis();
-    // Verifica se passou 1 hora desde última leitura
+    // Verifica se passou 30 segundos desde última leitura
     if (agora - ultima_leitura >= intervalo_leitura) {
       Serial.println("\n[AÇÃO] Lendo sensor...");
       lerSensor();
@@ -487,3 +546,4 @@ void loop()
   
   delay(100); // Pequena pausa para não sobrecarregar
 }
+

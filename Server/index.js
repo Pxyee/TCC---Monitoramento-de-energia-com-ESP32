@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 
 const app = express(); // Cria uma instância do Express
 app.use(cors()); //cors = Cross-Origin Resource Sharing, permite que o frontend em outro dominio acesse a API
-app.use(express.json()); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
+app.use(express.json({ limit: '1mb' })); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
 
 
 // Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
@@ -37,6 +37,16 @@ const pool = mysql.createPool({
     connectionLimit: 10, // Max 10 usuarios simultaneos
     queueLimit: 0 // Fila ilimitada
 });
+
+let dadosTempoReal = {
+    tensao: 0,
+    corrente: 0,
+    kwh: 0,
+    mensal: [],
+    labels: [],
+    dados: [],
+    instante: null
+};
 
 const verificarToken = (req, res, next) => { //cria uma função que recebe req(requisição),res(resposta) e next (passa para o proximo middleware)
     const authHeader = req.headers['authorization'];
@@ -144,11 +154,18 @@ app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com 
 }
 });
 
-app.post('/api/iot/energia', async (req, res) => { //novo
+app.post('/api/iot/energia', async (req, res) => {
 
     try {
 
-        const { tensao, corrente, kwh } = req.body;
+        const {
+            tensao,
+            corrente,
+            kwh,
+            mensal,
+            labels,
+            dados
+        } = req.body;
 
         console.log(req.body);
 
@@ -160,6 +177,16 @@ app.post('/api/iot/energia', async (req, res) => { //novo
             `,
             [tensao, corrente, kwh]
         );
+
+        dadosTempoReal = {
+            tensao,
+            corrente,
+            kwh,
+            mensal,
+            labels,
+            dados,
+            instante: new Date()
+        };
 
         res.json({
             success: true,
@@ -192,88 +219,6 @@ app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com m
     }
 });
 
-//app.get('/', (req, res) => {
-  //  res.send('API Voltsense funcionando com sucesso!');
-//});
-
-
-// ======================================================
-// 📊 CONSUMO DO DIA
-// ======================================================
-
-app.get('/api/consumo-dia', async (req, res) => {
-
-    try {
-
-        const [rows] = await pool.execute(`
-            SELECT
-                DATE_FORMAT(instante, '%H:%i') AS hora,
-                MAX(kwh) AS kwh
-            FROM leituras
-            WHERE DATE(instante) = CURDATE()
-            GROUP BY DATE_FORMAT(instante, '%H:%i')
-            ORDER BY instante ASC
-        `);
-
-        res.json(rows);
-
-    } catch (error) {
-
-        console.error('Erro ao buscar consumo do dia:', error);
-
-        res.status(500).json({
-            success: false,
-            error: 'Erro interno do servidor'
-        });
-
-    }
-
-});
-
-
-// ======================================================
-// 📊 CONSUMO ACUMULADO DO MÊS
-// ======================================================
-// ======================================================
-// 📊 CONSUMO ACUMULADO DO MÊS
-// ======================================================
-
-app.get('/api/consumo-mes', async (req, res) => {
-
-    try {
-
-        const [rows] = await pool.execute(`
-
-            SELECT
-                DAY(instante) AS dia,
-                MAX(kwh) - MIN(kwh) AS total
-
-            FROM leituras
-
-            WHERE MONTH(instante) = MONTH(CURDATE())
-            AND YEAR(instante) = YEAR(CURDATE())
-
-            GROUP BY DAY(instante)
-
-            ORDER BY dia ASC
-
-        `);
-
-        res.json(rows);
-
-    } catch (error) {
-
-        console.error('Erro GET /api/consumo-mes:', error);
-
-        res.status(500).json({
-            success: false,
-            error: 'Erro interno do servidor'
-        });
-
-    }
-
-});
-
 // ======================================================
 // 📊 RESUMO SEMANAL
 // ======================================================
@@ -295,7 +240,7 @@ app.get('/api/resumo-semana', async (req, res) => {
 
             SELECT
                 DATE(instante) AS dia,
-                MAX(kwh) - MIN(kwh) AS total
+                MAX(kwh)
 
             FROM leituras
 
@@ -335,35 +280,7 @@ app.get('/api/tempo-real', async (req, res) => {
 
     try {
 
-        const [rows] = await pool.execute(`
-            
-            SELECT
-                tensao,
-                corrente,
-                kwh,
-                instante
-
-            FROM leituras
-
-            ORDER BY instante DESC
-
-            LIMIT 1
-
-        `);
-
-        // sem dados
-        if (rows.length === 0) {
-
-            return res.json({
-                tensao: null,
-                corrente: null,
-                kwh: null,
-                instante: null
-            });
-
-        }
-
-        res.json(rows[0]);
+        res.json(dadosTempoReal);
 
     } catch (error) {
 

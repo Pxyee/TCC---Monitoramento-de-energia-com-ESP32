@@ -1,4 +1,4 @@
-// 🔐 VERIFICA LOGIN
+// VERIFICA LOGIN
 const token = localStorage.getItem("token");
 const nome = localStorage.getItem("nomeUsuario");
 
@@ -11,9 +11,8 @@ const isLocal =
     window.location.href = "/login";
 }
 
-
 // ======================================================
-// 👤 NOME DO USUÁRIO
+// NOME DO USUÁRIO
 // ======================================================
 
 if (nome && nome !== "null" && nome !== "undefined") {
@@ -32,9 +31,8 @@ if (nome && nome !== "null" && nome !== "undefined") {
 
 }
 
-
 // ======================================================
-// 📂 SIDEBAR
+// SIDEBAR
 // ======================================================
 
 const toggleBtn = document.getElementById("toggleBtn");
@@ -68,7 +66,6 @@ function updateMargins() {
 
 }
 
-
 if (toggleBtn) {
 
   toggleBtn.addEventListener("click", function () {
@@ -86,9 +83,8 @@ if (toggleBtn) {
 
 }
 
-
 // ======================================================
-// 🔄 RESTAURA SIDEBAR
+// RESTAURA SIDEBAR
 // ======================================================
 
 window.addEventListener("load", function () {
@@ -103,9 +99,8 @@ window.addEventListener("load", function () {
 
 });
 
-
 // ======================================================
-// 🚪 LOGOUT
+// LOGOUT
 // ======================================================
 
 const logoutBtn = document.querySelector(".logout-btn");
@@ -126,9 +121,8 @@ if (logoutBtn) {
 
 }
 
-
 // ======================================================
-// 📊 ATUALIZA CARDS
+// ATUALIZA CARDS
 // ======================================================
 
 async function atualizarDados() {
@@ -152,6 +146,21 @@ async function atualizarDados() {
     document.getElementById("atualizacao").textContent =
       new Date(dados.instante).toLocaleTimeString();
 
+    // atualiza gráfico diário
+    graficoDia.data.labels = dados.labels || [];
+
+    graficoDia.data.datasets[0].data =
+      dados.dados || [];
+
+    graficoDia.update();
+
+
+// atualiza gráfico mensal
+graficoMes.data.datasets[0].data =
+  dados.mensal || [];
+
+graficoMes.update();
+
   } catch (erro) {
 
     console.error("Erro ao atualizar cards:", erro);
@@ -160,247 +169,134 @@ async function atualizarDados() {
 
 }
 
-
 // inicia cards
 atualizarDados();
-
 
 // atualização automática
 setInterval(atualizarDados, 2000);
 
-
-
 // ======================================================
-// 📈 GRÁFICO CONSUMO DO DIA
+// GRÁFICO CONSUMO DO DIA
 // ======================================================
 
 const ctxDia = document.getElementById("graficoConsumo");
 
-let graficoDia;
+let graficoDia = new Chart(ctxDia, {
 
-async function carregarGraficoDia() {
+  type: "line",
 
-  try {
+  data: {
 
-    const response =
-      await fetch("/api/consumo-dia");
+    labels: [],
 
-    const dados = await response.json();
+    datasets: [
 
-    // horários
-    const labelsDia = dados.map(item => item.hora);
+      {
+        label: "Consumo do dia (kWh)",
 
-    // consumo
-    const dadosDia = dados.map(item => Number(item.kwh));
+        data: [],
 
-    // destrói gráfico antigo
-    if (graficoDia) {
-      graficoDia.destroy();
-    }
+        tension: 0.5,
 
-    // evita erro quando tudo for 0
-    let minY = 0;
-    let maxY = 1;
+        cubicInterpolationMode: 'monotone',
 
-    if (dadosDia.length > 0) {
+        fill: true,
 
-      const menor = Math.min(...dadosDia);
-      const maior = Math.max(...dadosDia);
+        borderWidth: 2,
 
-      if (menor !== maior) {
+        pointRadius: 2,
 
-        minY = menor * 0.95;
-        maxY = maior * 1.05;
-
-      } else {
-
-        minY = 0;
-        maxY = maior + 1;
-
+        pointHoverRadius: 5
       }
 
-    }
+    ]
+  },
 
-    graficoDia = new Chart(ctxDia, {
+  options: {
 
-      type: "line",
+    responsive: true,
 
-      data: {
+    maintainAspectRatio: false,
 
-        labels: labelsDia,
+    animation: false,
 
-        datasets: [
+    scales: {
 
-          {
-            label: "Consumo do dia (kWh)",
+      y: {
 
-            data: dadosDia,
+        beginAtZero: true,
 
-            tension: 0.5,
-            cubicInterpolationMode: 'monotone',
+        ticks: {
 
-            fill: true,
-
-            borderWidth: 2,
-
-            pointRadius: 2,
-
-            pointHoverRadius: 5
-          }
-
-        ]
-      },
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        animation: false,
-
-        scales: {
-
-          y: {
-
-            beginAtZero: false,
-
-            min: minY,
-
-            max: maxY,
-
-            ticks: {
-
-              precision: 3
-
-            }
-
-          }
+          precision: 3
 
         }
 
       }
 
-    });
-
-  } catch (erro) {
-
-    console.error(
-      "Erro ao carregar gráfico do dia:",
-      erro
-    );
+    }
 
   }
 
-}
-
-// inicia gráfico
-carregarGraficoDia();
-
-// atualiza automaticamente
-setInterval(carregarGraficoDia, 10000);
-
-
+});
 
 // ======================================================
-// 📊 GRÁFICO ACUMULADO DO MÊS
+// GRÁFICO MENSAL
 // ======================================================
 
 const ctxMes = document.getElementById("graficoMes");
 
-let graficoMes;
+let graficoMes = new Chart(ctxMes, {
 
+  type: "bar",
 
-async function carregarGraficoMes() {
+  data: {
 
-  try {
+    labels: [
+      1,2,3,4,5,6,7,8,9,10,
+      11,12,13,14,15,16,17,18,19,20,
+      21,22,23,24,25,26,27,28,29,30,31
+    ],
 
-    const response = await fetch("/api/consumo-mes");
+    datasets: [
 
-    const dados = await response.json();
+      {
+        label: "Consumo mensal (kWh)",
 
-    // cria array dos 31 dias
-    const labelsMes = [];
-    const dadosMes = [];
+        data: [],
 
-    // cria objeto para busca rápida
-    const mapaDados = {};
+        borderWidth: 1,
 
-    dados.forEach(item => {
-      mapaDados[item.dia] = item.total;
-    });
-
-    // preenche todos os dias
-    for (let i = 1; i <= 31; i++) {
-
-      labelsMes.push(i);
-
-      // se não existir dia, coloca 0
-      dadosMes.push(mapaDados[i] || 0);
-    }
-
-    // destrói gráfico antigo
-    if (graficoMes) {
-      graficoMes.destroy();
-    }
-
-    graficoMes = new Chart(ctxMes, {
-
-      type: "bar",
-
-      data: {
-
-        labels: labelsMes,
-
-        datasets: [
-          {
-            label: "Consumo mensal (kWh)",
-
-            data: dadosMes,
-
-            borderWidth: 1,
-
-            borderRadius: 8
-          }
-        ]
-      },
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        animation: false,
-
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
+        borderRadius: 8
       }
 
-    });
+    ]
+  },
 
-  } catch (erro) {
+  options: {
 
-    console.error("Erro ao carregar gráfico mensal:", erro);
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    animation: false,
+
+    scales: {
+
+      y: {
+
+        beginAtZero: true
+
+      }
+
+    }
 
   }
 
-}
-
-
-// inicia gráfico mensal
-carregarGraficoMes();
-
-// atualiza automaticamente
-setInterval(carregarGraficoMes, 30000);
-
-
+});
 
 // ======================================================
-// 📊 RESUMO DA SEMANA
+// RESUMO DA SEMANA
 // ======================================================
 
 function atualizarResumo(dados) {
@@ -447,10 +343,8 @@ function atualizarResumo(dados) {
 
 }
 
-
-
 // ======================================================
-// 📅 CONVERTE SEMANA ISO
+// CONVERTE SEMANA ISO
 // ======================================================
 
 function getDatasSemana(weekString) {
@@ -479,7 +373,7 @@ function getDatasSemana(weekString) {
 
 
 // ======================================================
-// 📅 FILTRO SEMANA
+// FILTRO SEMANA
 // ======================================================
 
 const filtroSemana =
@@ -541,10 +435,8 @@ if (filtroSemana) {
 
 }
 
-
-
 // ======================================================
-// 🚀 INIT RESUMO
+// INIT RESUMO
 // ======================================================
 
 (function initResumo() {

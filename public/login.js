@@ -3,7 +3,7 @@ const mensagem = document.getElementById('mensagem');
 
 
 // ======================================================
-// 👁️ TOGGLE SENHA
+// TOGGLE SENHA
 // ======================================================
 
 document.querySelectorAll('.toggle-password').forEach(button => {
@@ -36,7 +36,7 @@ document.querySelectorAll('.toggle-password').forEach(button => {
 
 
 // ======================================================
-// 🔐 LOGIN
+// LOGIN
 // ======================================================
 
 form.addEventListener('submit', async (e) => {
@@ -112,7 +112,7 @@ form.addEventListener('submit', async (e) => {
 
 
 // ======================================================
-// 🔐 MODAL RECUPERAR SENHA
+// MODAL RECUPERAR SENHA
 // ======================================================
 
 const modalSenha =
