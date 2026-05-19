@@ -182,6 +182,8 @@ if (logoutBtn) {
 // ATUALIZA CARDS
 // ======================================================
 
+let graficoMes;
+
 async function atualizarDados() {
 
   try {
@@ -226,13 +228,6 @@ graficoMes.update();
 
 }
 
-// inicia cards
-atualizarDados();
-
-// atualização automática
-setInterval(atualizarDados, 2000);
-
-
 
 // ======================================================
 // GRÁFICO MENSAL
@@ -240,7 +235,7 @@ setInterval(atualizarDados, 2000);
 
 const ctxMes = document.getElementById("graficoMes");
 
-let graficoMes = new Chart(ctxMes, {
+graficoMes = new Chart(ctxMes, {
 
   type: "bar",
 
@@ -288,6 +283,12 @@ let graficoMes = new Chart(ctxMes, {
   }
 
 });
+
+// inicia cards
+atualizarDados();
+
+// atualização automática
+setInterval(atualizarDados, 2000);
 
 // ======================================================
 // RESUMO DA SEMANA
@@ -394,24 +395,25 @@ if (filtroSemana) {
 
       try {
 
-        const response =
-          await fetch(
-            `/api/resumo-semana?semana=${valor}`
-        );
+  const response =
+    await fetch(
+      `/api/resumo-semana?semana=${valor}`
+    );
 
-        const dados = await response.json();
+  const dados = await response.json();
 
-        // sem dados da semana
-        if (
-          !dados ||
-          dados.length === 0 ||
-          dados.every(v => isNaN(Number(v)))
-      ) {
+  // sem dados
+  if (!dados || dados.length === 0) {
 
-        const valores =
-          dados.map(item => Number(item.total));
+    atualizarResumo([]);
+    return;
 
-        atualizarResumo(valores);
+  }
+
+  const valores =
+    dados.map(item => Number(item.total));
+
+  atualizarResumo(valores);
 
       } catch (erro) {
 
@@ -423,11 +425,8 @@ if (filtroSemana) {
         atualizarResumo([]);
 
       }
-
     }
-
   );
-
 }
 
 // ======================================================
