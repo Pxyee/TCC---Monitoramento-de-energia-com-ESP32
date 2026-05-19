@@ -121,6 +121,63 @@ if (logoutBtn) {
 
 }
 
+//Grafico consumo do dia
+
+  const ctxDia = document.getElementById("graficoConsumo");
+
+  let graficoDia = new Chart(ctxDia, {
+
+  type: "line",
+
+  data: {
+
+    labels: [],
+
+    datasets: [
+
+      {
+        label: "Consumo do dia (kWh)",
+
+        data: [],
+
+        tension: 0.5,
+        cubicInterpolationMode: 'monotone',
+
+        fill: true,
+
+        borderWidth: 2,
+
+        pointRadius: 2,
+
+        pointHoverRadius: 5
+      }
+
+    ]
+  },
+
+  options: {
+
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    animation: false,
+
+    scales: {
+
+      y: {
+
+        beginAtZero: false
+
+      }
+
+    }
+
+  }
+
+});
+
+
 // ======================================================
 // ATUALIZA CARDS
 // ======================================================
@@ -145,7 +202,7 @@ async function atualizarDados() {
 
     document.getElementById("atualizacao").textContent =
       new Date(dados.instante).toLocaleTimeString();
-
+    
     // atualiza gráfico diário
     graficoDia.data.labels = dados.labels || [];
 
@@ -175,70 +232,7 @@ atualizarDados();
 // atualização automática
 setInterval(atualizarDados, 2000);
 
-// ======================================================
-// GRÁFICO CONSUMO DO DIA
-// ======================================================
 
-const ctxDia = document.getElementById("graficoConsumo");
-
-let graficoDia = new Chart(ctxDia, {
-
-  type: "line",
-
-  data: {
-
-    labels: [],
-
-    datasets: [
-
-      {
-        label: "Consumo do dia (kWh)",
-
-        data: [],
-
-        tension: 0.5,
-
-        cubicInterpolationMode: 'monotone',
-
-        fill: true,
-
-        borderWidth: 2,
-
-        pointRadius: 2,
-
-        pointHoverRadius: 5
-      }
-
-    ]
-  },
-
-  options: {
-
-    responsive: true,
-
-    maintainAspectRatio: false,
-
-    animation: false,
-
-    scales: {
-
-      y: {
-
-        beginAtZero: true,
-
-        ticks: {
-
-          precision: 3
-
-        }
-
-      }
-
-    }
-
-  }
-
-});
 
 // ======================================================
 // GRÁFICO MENSAL
@@ -369,8 +363,6 @@ function getDatasSemana(weekString) {
   return { inicio, fim };
 
 }
-
-
 
 // ======================================================
 // FILTRO SEMANA
