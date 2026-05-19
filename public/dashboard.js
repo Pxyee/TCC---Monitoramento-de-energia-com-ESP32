@@ -295,8 +295,11 @@ let graficoMes = new Chart(ctxMes, {
 
 function atualizarResumo(dados) {
 
-  // limpa tudo
-  if (!dados || dados.length === 0) {
+  if (
+    !dados ||
+    dados.length === 0 ||
+    dados.every(v => isNaN(Number(v)))
+  ) {
 
     document.getElementById("totalSemana").textContent =
       "-- kWh";
@@ -313,7 +316,9 @@ function atualizarResumo(dados) {
     return;
   }
 
-  const numeros = dados.map(Number);
+  const numeros = dados
+    .map(Number)
+    .filter(n => !isNaN(n));
 
   const total = numeros.reduce((a, b) => a + b, 0);
 
@@ -334,7 +339,6 @@ function atualizarResumo(dados) {
 
   document.getElementById("minSemana").textContent =
     min.toFixed(2) + " kWh";
-
 }
 
 // ======================================================
@@ -398,12 +402,11 @@ if (filtroSemana) {
         const dados = await response.json();
 
         // sem dados da semana
-        if (!dados || dados.length === 0) {
-
-          atualizarResumo([]);
-          return;
-
-        }
+        if (
+          !dados ||
+          dados.length === 0 ||
+          dados.every(v => isNaN(Number(v)))
+      ) {
 
         const valores =
           dados.map(item => Number(item.total));

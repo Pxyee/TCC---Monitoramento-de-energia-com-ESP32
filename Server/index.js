@@ -167,6 +167,10 @@ app.post('/api/iot/energia', async (req, res) => {
             dados
         } = req.body;
 
+        console.log("LABELS:", labels);
+        console.log("DADOS:", dados);
+        console.log("MENSAL:", mensal);
+
         console.log(req.body);
 
         const [result] = await pool.execute(
