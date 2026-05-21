@@ -18,14 +18,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- Criar tabela de leituras de energia
 CREATE TABLE IF NOT EXISTS leituras (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
     tensao DECIMAL(10,2) NOT NULL,
     corrente DECIMAL(10,2) NOT NULL,
     kwh DECIMAL(10,2) NOT NULL,
-    instante TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    instante TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices para otimização
-CREATE INDEX idx_leituras_usuario_id ON leituras(usuario_id);
+-- Índice para otimização
 CREATE INDEX idx_leituras_instante ON leituras(instante);

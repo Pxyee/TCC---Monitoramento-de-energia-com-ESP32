@@ -193,6 +193,35 @@ async function atualizarDados() {
 
     const dados = await response.json();
 
+    const ultimoInstante = dados.instante ? new Date(dados.instante) : null;
+    const offline = dados.offline === true;
+    const statusEl = document.getElementById("statusESP");
+
+    if (ultimoInstante && !isNaN(ultimoInstante.getTime())) {
+      document.getElementById("horaAtualizacao").textContent =
+        ultimoInstante.toLocaleTimeString("pt-BR", {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+      document.getElementById("dataAtualizacao").textContent =
+        ultimoInstante.toLocaleDateString("pt-BR", {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+    } else {
+      document.getElementById("horaAtualizacao").textContent = "--:--:--";
+      document.getElementById("dataAtualizacao").textContent = "--/--/----";
+    }
+
+    if (statusEl) {
+      statusEl.textContent = offline ? "● OFFLINE" : "● ONLINE";
+      statusEl.className = offline ? "status-offline" : "status-online";
+    }
+
+
     document.getElementById("tensao").textContent =
       Number(dados.tensao).toFixed(2) + " V";
 
@@ -202,23 +231,18 @@ async function atualizarDados() {
     document.getElementById("consumo").textContent =
       Number(dados.kwh).toFixed(3) + " kWh";
 
-    document.getElementById("atualizacao").textContent =
-      new Date(dados.instante).toLocaleTimeString();
-    
-    // atualiza gráfico diário
-    graficoDia.data.labels = dados.labels || [];
+    graficoDia.data.labels =
+      Array.isArray(dados.labels) ? dados.labels : [];
 
     graficoDia.data.datasets[0].data =
-      dados.dados || [];
+      Array.isArray(dados.dados) ? dados.dados : [];
 
     graficoDia.update();
 
+    graficoMes.data.datasets[0].data =
+      Array.isArray(dados.mensal) ? dados.mensal : [];
 
-// atualiza gráfico mensal
-graficoMes.data.datasets[0].data =
-  dados.mensal || [];
-
-graficoMes.update();
+    graficoMes.update();
 
   } catch (erro) {
 
@@ -287,8 +311,8 @@ graficoMes = new Chart(ctxMes, {
 // inicia cards
 atualizarDados();
 
-// atualização automática
-setInterval(atualizarDados, 2000);
+// atualização automática a cada 10 segundos
+setInterval(atualizarDados, 10000);
 
 // ======================================================
 // RESUMO DA SEMANA
@@ -369,6 +393,38 @@ function getDatasSemana(weekString) {
 
 }
 
+function getWeekString(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+async function carregarResumoSemana(semana) {
+  if (!semana) {
+    atualizarResumo([]);
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/resumo-semana?semana=${semana}`);
+    const dados = await response.json();
+
+    if (!dados || dados.length === 0) {
+      atualizarResumo([]);
+      return;
+    }
+
+    const valores = dados.map(item => Number(item.total));
+    atualizarResumo(valores);
+  } catch (erro) {
+    console.error("Erro ao carregar resumo semanal:", erro);
+    atualizarResumo([]);
+  }
+}
+
 // ======================================================
 // FILTRO SEMANA
 // ======================================================
@@ -381,50 +437,9 @@ if (filtroSemana) {
   filtroSemana.addEventListener(
     "change",
 
-    async function () {
-
+    function () {
       const valor = this.value;
-
-      // sem semana selecionada
-      if (!valor) {
-
-        atualizarResumo([]);
-        return;
-
-      }
-
-      try {
-
-  const response =
-    await fetch(
-      `/api/resumo-semana?semana=${valor}`
-    );
-
-  const dados = await response.json();
-
-  // sem dados
-  if (!dados || dados.length === 0) {
-
-    atualizarResumo([]);
-    return;
-
-  }
-
-  const valores =
-    dados.map(item => Number(item.total));
-
-  atualizarResumo(valores);
-
-      } catch (erro) {
-
-        console.error(
-          "Erro ao carregar resumo semanal:",
-          erro
-        );
-
-        atualizarResumo([]);
-
-      }
+      carregarResumoSemana(valor);
     }
   );
 }
@@ -435,6 +450,18 @@ if (filtroSemana) {
 
 (function initResumo() {
 
-  atualizarResumo([]);
+  if (filtroSemana) {
+    const semanaAtual = getWeekString(new Date());
+    filtroSemana.value = semanaAtual;
+    carregarResumoSemana(semanaAtual);
+
+    setInterval(() => {
+      if (filtroSemana.value) {
+        carregarResumoSemana(filtroSemana.value);
+      }
+    }, 60000);
+  } else {
+    atualizarResumo([]);
+  }
 
 })();

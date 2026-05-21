@@ -23,8 +23,8 @@
 
 // ========== PROTÓTIPOS DE FUNÇÕES ==========
 void conectarWiFi();
-void lerSensor();
-void enviarDados();
+bool lerSensor();
+bool enviarDados();
 void salvarWiFiEEPROM();
 void lerWiFiEEPROM();
 void apagarWiFiEEPROM();
@@ -54,6 +54,11 @@ bool reset = false;
 
 // ========== CONFIGURAÇÕES SENSOR SCT013-020 ==========
 const int pino_adc = 34;           // Pino analógico do ESP32
+const int pinoRede = 33;           // Pino digital que detecta presença da rede elétrica
+const bool redeAtivaEmHigh = true; // true se sinal de rede for HIGH quando a rede estiver presente
+bool redePresente = false;
+bool envioQuedaEnergiaRealizado = false;
+bool quedaEnergiaPendente = false;
 const float burden_resistor = 62.0; // Resistência de carga (ohms)
 const float primary_current = 20.0; // SCT013-020 (até 20A) ← ALTERADO
 const float tensao_rede = 127.0;   // Tensão da tomada (V)
@@ -76,11 +81,16 @@ int leiturasIgnoradas = 0;
 const int endereco_eeprom_ssid = 0;
 const int endereco_eeprom_pass = 50;
 const int endereco_eeprom_url = 100;
+const int endereco_eeprom_kwh = 200;
+const int endereco_eeprom_consumo_diario = 204;
+const int endereco_eeprom_ultimoDia = 208;
+const int endereco_eeprom_consumo_mensal = 212;
+const int endereco_eeprom_marker = 400; // marca de validação de dados salvos
 
 EnergyMonitor emon1;
 
 // ========== LER SENSOR SCT013 ==========
-void lerSensor() {
+bool lerSensor() {
 
   corrente_rms = emon1.calcIrms(4000);  // Calculate Irms only
   // ignora primeiras leituras após ligar
@@ -92,7 +102,7 @@ void lerSensor() {
 
     Serial.println("Ignorando leitura inicial...");
 
-    return;
+    return false;
   }
 
 
@@ -166,14 +176,48 @@ void lerSensor() {
   historicoHorario.push_back(String(horario));
   historicoConsumo.push_back(consumoDiario);
   Serial.println("=======================\n");
+
+  // salva o estado atual em EEPROM para recuperar após reinício
+  salvarEstadoEEPROM();
+  
+  return true;
+}
+
+void salvarEstadoEEPROM() {
+  EEPROM.put(endereco_eeprom_kwh, kwh);
+  EEPROM.put(endereco_eeprom_consumo_diario, consumoDiario);
+  EEPROM.put(endereco_eeprom_ultimoDia, ultimoDia);
+  for (int i = 0; i < 31; i++) {
+    EEPROM.put(endereco_eeprom_consumo_mensal + i * sizeof(float), consumoMensal[i]);
+  }
+  EEPROM.write(endereco_eeprom_marker, 0xA5);
+  EEPROM.commit();
+}
+
+void carregarEstadoEEPROM() {
+  if (EEPROM.read(endereco_eeprom_marker) == 0xA5) {
+    EEPROM.get(endereco_eeprom_kwh, kwh);
+    EEPROM.get(endereco_eeprom_consumo_diario, consumoDiario);
+    EEPROM.get(endereco_eeprom_ultimoDia, ultimoDia);
+    for (int i = 0; i < 31; i++) {
+      EEPROM.get(endereco_eeprom_consumo_mensal + i * sizeof(float), consumoMensal[i]);
+    }
+    Serial.println("Estado de energia recuperado da EEPROM.");
+    Serial.print("kWh: ");
+    Serial.println(kwh, 4);
+    Serial.print("Consumo diário: ");
+    Serial.println(consumoDiario, 4);
+  } else {
+    Serial.println("Nenhum estado de energia válido encontrado na EEPROM.");
+  }
 }
 
 // ========== SALVAR CREDENCIAIS NA EEPROM ==========
 void salvarWiFiEEPROM() {
   Serial.println("Salvando credenciais na EEPROM...");
   
-  // Limpa EEPROM
-  for (int i = 0; i < 512; i++) {
+  // Limpa apenas a área de SSID / senha / URL
+  for (int i = endereco_eeprom_ssid; i < endereco_eeprom_url + 100; i++) {
     EEPROM.write(i, 0);
   }
   
@@ -228,7 +272,7 @@ void apagandoWiFiEEPROM()
     digitalWrite(led_vm, HIGH);
     digitalWrite(led_vd, HIGH);
     delay(1000);
-    for (int i = 0; i < EEPROM.length(); i++) 
+    for (int i = endereco_eeprom_ssid; i < endereco_eeprom_url + 100; i++) 
     {
       EEPROM.write(i, 0);
     }
@@ -271,10 +315,10 @@ void lerWiFiEEPROM() {
 }
 
 // ========== ENVIAR DADOS AO SERVIDOR ==========
-void enviarDados() {
+bool enviarDados() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi não conectado!");
-    return;
+    return false;
   }
   
   HTTPClient http;
@@ -325,15 +369,17 @@ void enviarDados() {
     Serial.println("Dados enviados com sucesso!");
     String resposta = http.getString();
     Serial.println("Resposta: " + resposta);
+    http.end();
+    return true;
   } else {
     Serial.print("Erro na resposta HTTP: ");
     Serial.println(httpResponseCode);
     if (httpResponseCode > 0) {
       Serial.println("Resposta: " + http.getString());
     }
+    http.end();
+    return false;
   }
-  
-  http.end();
 }
 
 // ========== CONECTAR AO WiFi ==========
@@ -384,8 +430,11 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(Reset, INPUT_PULLUP);
+  pinMode(pinoRede, INPUT);
   pinMode(led_vd, OUTPUT);
   pinMode(led_vm, OUTPUT);
+
+  redePresente = digitalRead(pinoRede) == (redeAtivaEmHigh ? HIGH : LOW);
 
   digitalWrite(led_vd, LOW);
   digitalWrite(led_vm, LOW); 
@@ -400,6 +449,8 @@ void setup() {
   // Inicializa EEPROM
   EEPROM.begin(512);
   
+  carregarEstadoEEPROM();
+
   apagarWiFiEEPROM();
   apagandoWiFiEEPROM();
 
@@ -498,6 +549,9 @@ void loop()
 
     // atualiza dia
     ultimoDia = diaAtual;
+
+    // persiste o novo estado no fim do dia
+    salvarEstadoEEPROM();
   }
 
   if (WiFi.status() == WL_CONNECTED)
@@ -518,23 +572,60 @@ void loop()
     server.handleClient();
     return;
   }
+
+  bool redeAgora = digitalRead(pinoRede) == (redeAtivaEmHigh ? HIGH : LOW);
+  if (redeAgora != redePresente) {
+    if (!redeAgora && redePresente && !envioQuedaEnergiaRealizado) {
+      Serial.println("[FALHA] Queda de energia detectada.");
+      salvarEstadoEEPROM();
+      quedaEnergiaPendente = true;
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("[FALHA] Enviando última leitura ao servidor...");
+        if (enviarDados()) {
+          envioQuedaEnergiaRealizado = true;
+          quedaEnergiaPendente = false;
+        }
+      } else {
+        Serial.println("[FALHA] WiFi não conectado. Último estado salvo na EEPROM.");
+      }
+    }
+    if (redeAgora && !redePresente) {
+      Serial.println("[REDE] Energia restaurada.");
+      envioQuedaEnergiaRealizado = false;
+      quedaEnergiaPendente = false;
+    }
+    redePresente = redeAgora;
+  }
   
   // Se conectado ao WiFi
   if (WiFi.status() == WL_CONNECTED) {
+    if (quedaEnergiaPendente && !envioQuedaEnergiaRealizado) {
+      Serial.println("[FALHA] Tentando reenviar última leitura pendente...");
+      if (enviarDados()) {
+        envioQuedaEnergiaRealizado = true;
+        quedaEnergiaPendente = false;
+      }
+    }
     unsigned long agora = millis();
     // Verifica se passou 30 segundos desde última leitura
     if (agora - ultima_leitura >= intervalo_leitura) {
       Serial.println("\n[AÇÃO] Lendo sensor...");
-      lerSensor();
+      bool leituraValida = lerSensor();
       
-      Serial.println("[AÇÃO] Enviando dados ao servidor...");
-      enviarDados();
+      if (leituraValida) {
+        Serial.println("[AÇÃO] Enviando dados ao servidor...");
+        enviarDados();
+      } else {
+        Serial.println("[AÇÃO] Leitura inválida, pulando envio...");
+      }
       
       ultima_leitura = agora;
       
       unsigned long proxima = intervalo_leitura / 60000; // Converte para minutos
       Serial.print("Próxima leitura em ");
       Serial.print(proxima);
+      Serial.println(" minutos.\n");
+    }
       Serial.println(" minutos.\n");
     }
   } else {

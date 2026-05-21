@@ -38,15 +38,7 @@ const pool = mysql.createPool({
     queueLimit: 0 // Fila ilimitada
 });
 
-let dadosTempoReal = {
-    tensao: 0,
-    corrente: 0,
-    kwh: 0,
-    mensal: [],
-    labels: [],
-    dados: [],
-    instante: null
-};
+const OFFLINE_THRESHOLD_MS = 30 * 1000; // 30 segundos
 
 const verificarToken = (req, res, next) => { //cria uma função que recebe req(requisição),res(resposta) e next (passa para o proximo middleware)
     const authHeader = req.headers['authorization'];
@@ -182,16 +174,6 @@ app.post('/api/iot/energia', async (req, res) => {
             [tensao, corrente, kwh]
         );
 
-        dadosTempoReal = {
-            tensao,
-            corrente,
-            kwh,
-            mensal,
-            labels,
-            dados,
-            instante: new Date()
-        };
-
         res.json({
             success: true,
             insertedId: result.insertId
@@ -210,11 +192,10 @@ app.post('/api/iot/energia', async (req, res) => {
 
 // endpoint para buscar leituras
 
-app.get('/api/leituras', verificarToken, async (req, res) => { //rota GET, com middleware de verificação de token
+app.get('/api/leituras', verificarToken, async (req, res) => { // rota GET, apenas retorna leituras sem filtro por usuário
     try {
         const [rows] = await pool.execute(
-            'SELECT id, tensao, corrente, kwh, instante FROM leituras WHERE usuario_id = ? ORDER BY instante DESC LIMIT 200', // só leituras DELE, mais recente primeiro, maximo 200 registros
-            [req.usuarioId]
+            'SELECT id, tensao, corrente, kwh, instante FROM leituras ORDER BY instante DESC LIMIT 200'
         );
         res.json({ success: true, data: rows });
     } catch (error) {
@@ -244,7 +225,7 @@ app.get('/api/resumo-semana', async (req, res) => {
 
             SELECT
                 DATE(instante) AS dia,
-                MAX(kwh)
+                MAX(kwh) AS total
 
             FROM leituras
 
@@ -284,7 +265,65 @@ app.get('/api/tempo-real', async (req, res) => {
 
     try {
 
-        res.json(dadosTempoReal);
+        const [latestRows] = await pool.execute(
+            'SELECT tensao, corrente, kwh, instante FROM leituras ORDER BY instante DESC LIMIT 1'
+        );
+
+        const respostaTempoReal = {
+            tensao: 0,
+            corrente: 0,
+            kwh: 0,
+            instante: null,
+            labels: [],
+            dados: [],
+            mensal: Array.from({ length: 31 }, () => 0)
+        };
+
+        if (latestRows.length > 0) {
+            respostaTempoReal.tensao = latestRows[0].tensao;
+            respostaTempoReal.corrente = latestRows[0].corrente;
+            respostaTempoReal.kwh = latestRows[0].kwh;
+            respostaTempoReal.instante = latestRows[0].instante;
+        }
+
+        const [todayRows] = await pool.execute(
+            'SELECT kwh, instante FROM leituras WHERE DATE(instante) = CURDATE() ORDER BY instante ASC'
+        );
+
+        respostaTempoReal.labels = todayRows.map(row => {
+            const instante = new Date(row.instante);
+            return `${String(instante.getHours()).padStart(2, '0')}:${String(instante.getMinutes()).padStart(2, '0')}`;
+        });
+
+        respostaTempoReal.dados = todayRows.map(row => Number(row.kwh));
+
+        const [monthlyRows] = await pool.execute(
+            `SELECT DAY(instante) AS dia, MAX(kwh) AS total
+             FROM leituras
+             WHERE YEAR(instante) = YEAR(CURDATE())
+               AND MONTH(instante) = MONTH(CURDATE())
+             GROUP BY dia
+             ORDER BY dia ASC`
+        );
+
+        for (const row of monthlyRows) {
+            const dia = Number(row.dia);
+            if (dia >= 1 && dia <= 31) {
+                respostaTempoReal.mensal[dia - 1] = Number(row.total);
+            }
+        }
+
+        const agora = Date.now();
+        const instante = respostaTempoReal.instante
+            ? new Date(respostaTempoReal.instante).getTime()
+            : 0;
+
+        const offline = !instante || agora - instante > OFFLINE_THRESHOLD_MS;
+
+        res.json({
+            ...respostaTempoReal,
+            offline
+        });
 
     } catch (error) {
 

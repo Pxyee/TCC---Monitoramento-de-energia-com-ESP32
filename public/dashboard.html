@@ -73,14 +73,35 @@
       </div>
 
       <div class="card">
-        <h2>Consumo Acumulado</h2>
+        <h2>Consumo do Dia</h2>
         <p id="consumo">2.4 kWh</p>
       </div>
 
-      <div class="card">
+      <div class="card status-card">
+
         <h2>Última atualização</h2>
-        <p id="atualizacao">18:42</p>
-      </div>
+
+        <p id="horaAtualizacao" class="hora-atualizacao">
+          --:--:--
+        </p>
+
+        <small id="dataAtualizacao" class="data-atualizacao">
+          --:--:--
+        </small>
+
+        <div class="status-info">
+
+          <span id="statusESP" class="status-online">
+            ● ONLINE
+          </span>
+
+          <small id="intervaloAtualizacao">
+            Atualização automática: 30s
+          </small>
+
+        </div>
+
+</div>
 
     </div>
 
