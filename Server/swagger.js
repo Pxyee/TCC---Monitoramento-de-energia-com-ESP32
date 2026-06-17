@@ -10,7 +10,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://191.252.100.171:3000'
+        url: 'https://api.voltsense.com.br'
       }
     ]
   },
