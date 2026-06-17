@@ -46,6 +46,9 @@ unsigned int contadorBotao = 0;
 
 String wifi_ssid = "";
 String wifi_password = "";
+// Atualize este endereço para o servidor que deve receber os dados.
+// Se você estiver usando o servidor local do Projeto, altere para o IP do PC,
+// por exemplo: "http://192.168.0.100:3000".
 String server_url = "http://voltsense.com.br:3000";
 bool conectado = false;
 bool apagar = false;
@@ -93,18 +96,13 @@ EnergyMonitor emon1;
 bool lerSensor() {
 
   corrente_rms = emon1.calcIrms(4000);  // Calculate Irms only
-  // ignora primeiras leituras após ligar
-  if (leiturasIgnoradas < 3) {
-
-    leiturasIgnoradas++;
-
+  // ignora apenas a primeira leitura após ligar
+  if (!leiturasIgnoradas) {
+    leiturasIgnoradas = 1;
     corrente_rms = 0;
-
-    Serial.println("Ignorando leitura inicial...");
-
+    Serial.println("Ignorando primeira leitura inicial...");
     return false;
   }
-
 
   if (corrente_rms < 0.15)
    {
@@ -326,13 +324,16 @@ bool enviarDados() {
   // Monta a URL completa
   String url = server_url + "/api/iot/energia";
   
-  Serial.print("Enviando dados para: ");
-  Serial.println(url);
+  Serial.print("Enviar para servidor: ");
+  Serial.println(server_url);
+  Serial.print("IP local do ESP: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("RSSI: ");
+  Serial.println(WiFi.RSSI());
   
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
   
-  // Monta JSON com dados
   DynamicJsonDocument doc(4096);
   doc["tensao"] = tensao_rede;
   doc["corrente"] = corrente_rms;
@@ -391,7 +392,7 @@ void conectarWiFi() {
   WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
   
   int tentativas = 0;
-  while (WiFi.status() != WL_CONNECTED && tentativas < 20) 
+  while (WiFi.status() != WL_CONNECTED && tentativas < 40) 
   {
     delay(500);
     Serial.print(".");
@@ -464,7 +465,7 @@ void setup() {
     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
     
     int tentativas = 0;
-    while (WiFi.status() != WL_CONNECTED && tentativas < 15) {
+    while (WiFi.status() != WL_CONNECTED && tentativas < 60) {
       delay(500);
       Serial.print(".");
       tentativas++;
@@ -474,6 +475,8 @@ void setup() {
       Serial.println("\nConectado!");
       Serial.print("   IP: ");
       Serial.println(WiFi.localIP());
+      Serial.print("   RSSI: ");
+      Serial.println(WiFi.RSSI());
 
       configTime(-3 * 3600, 0, "pool.ntp.org");
 
@@ -481,6 +484,8 @@ void setup() {
       return; // Sucesso, sai do setup
     }
   }
+  Serial.print("Status WiFi final: ");
+  Serial.println(WiFi.status());
   
   // Se chegou aqui, abre portal de configuração
   Serial.println("Abrindo portal WiFi de configuração...");
@@ -573,7 +578,7 @@ void loop()
     return;
   }
 
-  bool redeAgora = digitalRead(pinoRede) == (redeAtivaEmHigh ? HIGH : LOW);
+  /*bool redeAgora = digitalRead(pinoRede) == (redeAtivaEmHigh ? HIGH : LOW);
   if (redeAgora != redePresente) {
     if (!redeAgora && redePresente && !envioQuedaEnergiaRealizado) {
       Serial.println("[FALHA] Queda de energia detectada.");
@@ -595,7 +600,7 @@ void loop()
       quedaEnergiaPendente = false;
     }
     redePresente = redeAgora;
-  }
+  }*/
   
   // Se conectado ao WiFi
   if (WiFi.status() == WL_CONNECTED) {
@@ -606,31 +611,30 @@ void loop()
         quedaEnergiaPendente = false;
       }
     }
+
     unsigned long agora = millis();
     // Verifica se passou 30 segundos desde última leitura
     if (agora - ultima_leitura >= intervalo_leitura) {
       Serial.println("\n[AÇÃO] Lendo sensor...");
       bool leituraValida = lerSensor();
-      
+
       if (leituraValida) {
         Serial.println("[AÇÃO] Enviando dados ao servidor...");
         enviarDados();
       } else {
         Serial.println("[AÇÃO] Leitura inválida, pulando envio...");
       }
-      
+
       ultima_leitura = agora;
-      
+
       unsigned long proxima = intervalo_leitura / 60000; // Converte para minutos
       Serial.print("Próxima leitura em ");
       Serial.print(proxima);
       Serial.println(" minutos.\n");
     }
-      Serial.println(" minutos.\n");
-    }
   } else {
     // Perdeu conexão, tenta reconectar
-    Serial.println("WiFi desconectado. Tentando reconectar...");
+    Serial.println("WiFi desconectado. Tentando reconectar..."); 
     WiFi.reconnect();
     delay(5000);
   }

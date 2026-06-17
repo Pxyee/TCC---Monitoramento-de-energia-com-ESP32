@@ -1,5 +1,6 @@
+console.log("ARQUIVO EXECUTADO:", __filename);
 require('dotenv').config();
-
+console.log("CLAUDIA TESTE SWAGGER");
 console.log("DB_USER:", process.env.DB_USER);
 console.log("DB_DATABASE:", process.env.DB_DATABASE);
 
@@ -12,11 +13,20 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 const app = express(); // Cria uma instância do Express
 app.use(cors()); //cors = Cross-Origin Resource Sharing, permite que o frontend em outro dominio acesse a API
 app.use(express.json({ limit: '1mb' })); // Middleware = camada intermediaria que processa requisições ANTES de chegar no código
-
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec)
+);
+app.get('/teste-swagger', (req, res) => {
+    res.send('Swagger carregado');
+});
 
 // Configura o caminho para os arquivos estáticos (HTML, CSS, JS)
 const path = require('path');
@@ -54,6 +64,42 @@ const verificarToken = (req, res, next) => { //cria uma função que recebe req(
         res.status(403).json({ success: false, error: 'Token inválido'});
     }
 };
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Cadastra um novo usuário
+ *     tags:
+ *       - Autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - email
+ *               - senha
+ *             properties:
+ *               nome:
+ *                 type: string
+ *                 example: Maria Claudia
+ *               email:
+ *                 type: string
+ *                 example: maria@email.com
+ *               senha:
+ *                 type: string
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Usuário registrado com sucesso
+ *       400:
+ *         description: Dados obrigatórios não informados
+ *       500:
+ *         description: Erro interno
+ */
 
 // Endpoint de registro
 
@@ -93,6 +139,36 @@ app.post('/api/auth/register', async (req, res) => {
     });
 }
 });
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Realiza o login do usuário
+ *     tags:
+ *       - Autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - senha
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: usuario@email.com
+ *               senha:
+ *                 type: string
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Login realizado com sucesso
+ *       401:
+ *         description: Credenciais inválidas
+ */
+
 
 // Endpoint de login
 
@@ -127,6 +203,44 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/energia:
+ *   post:
+ *     summary: Salva uma leitura de energia
+ *     tags:
+ *       - Energia
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tensao
+ *               - corrente
+ *               - kwh
+ *             properties:
+ *               tensao:
+ *                 type: number
+ *                 example: 220
+ *               corrente:
+ *                 type: number
+ *                 example: 5.3
+ *               kwh:
+ *                 type: number
+ *                 example: 1.52
+ *     responses:
+ *       200:
+ *         description: Leitura salva com sucesso
+ *       401:
+ *         description: Token não fornecido
+ *       403:
+ *         description: Token inválido
+ */
+
 // Endpoint de Salvar leitura
 
 app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com middleware de verificação de token
@@ -145,6 +259,32 @@ app.post('/api/energia', verificarToken, async (req, res) => { //rota post, com 
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
 }
 });
+
+/**
+ * @swagger
+ * /api/iot/energia:
+ *   post:
+ *     summary: Recebe dados enviados pelo ESP32
+ *     tags:
+ *       - IoT
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tensao:
+ *                 type: number
+ *               corrente:
+ *                 type: number
+ *               kwh:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Dados recebidos com sucesso
+ */
+
 
 app.post('/api/iot/energia', async (req, res) => {
 
@@ -190,6 +330,22 @@ app.post('/api/iot/energia', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/leituras:
+ *   get:
+ *     summary: Retorna as últimas leituras registradas
+ *     tags:
+ *       - Consultas
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de leituras
+ *       401:
+ *         description: Token não fornecido
+ */
+
 // endpoint para buscar leituras
 
 app.get('/api/leituras', verificarToken, async (req, res) => { // rota GET, apenas retorna leituras sem filtro por usuário
@@ -207,6 +363,25 @@ app.get('/api/leituras', verificarToken, async (req, res) => { // rota GET, apen
 // ======================================================
 // 📊 RESUMO SEMANAL
 // ======================================================
+
+/**
+ * @swagger
+ * /api/resumo-semana:
+ *   get:
+ *     summary: Retorna o consumo semanal
+ *     tags:
+ *       - Consultas
+ *     parameters:
+ *       - in: query
+ *         name: semana
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 2026-W24
+ *     responses:
+ *       200:
+ *         description: Resumo semanal
+ */
 
 app.get('/api/resumo-semana', async (req, res) => {
 
@@ -260,6 +435,19 @@ app.get('/api/resumo-semana', async (req, res) => {
 // ======================================================
 // ⚡ ÚLTIMA LEITURA
 // ======================================================
+
+
+/**
+ * @swagger
+ * /api/tempo-real:
+ *   get:
+ *     summary: Retorna a última leitura e status do dispositivo
+ *     tags:
+ *       - Consultas
+ *     responses:
+ *       200:
+ *         description: Dados em tempo real
+ */
 
 app.get('/api/tempo-real', async (req, res) => {
 
